@@ -1,0 +1,31 @@
+-- CreateTable
+CREATE TABLE "Competition" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "Round" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "bettingStart" DATETIME NOT NULL,
+    "bettingEnd" DATETIME NOT NULL,
+    "competitionId" INTEGER NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Round_competitionId_fkey" FOREIGN KEY ("competitionId") REFERENCES "Competition" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "MatchPair" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "homeTeam" TEXT NOT NULL,
+    "awayTeam" TEXT NOT NULL,
+    "matchDate" DATETIME NOT NULL,
+    "roundId" INTEGER NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "MatchPair_roundId_fkey" FOREIGN KEY ("roundId") REFERENCES "Round" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
