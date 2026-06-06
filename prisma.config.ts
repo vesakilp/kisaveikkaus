@@ -6,6 +6,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: "file:./dev.db",
+    // Load from environment variable for CLI commands
+    // This is safe to commit as it references the environment variable
+    url: process.env.DIRECT_URL || "",
   },
 });
