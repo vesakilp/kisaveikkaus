@@ -1,10 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "env": {
-    "DATABASE_URL": {
-      "description": "Prisma Accelerate connection string for database queries",
-      "required": true
-    }
-  }
+  "framework": "nextjs"
 }
