@@ -1,19 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run vercel-build",
   "framework": "nextjs",
   "env": {
     "DATABASE_URL": {
       "description": "Prisma Accelerate connection string for database queries",
       "required": true
-    }
-  },
-  "build": {
-    "env": {
-      "DIRECT_URL": {
-        "description": "Direct PostgreSQL connection for migrations (optional, only needed if running migrations during build)",
-        "required": false
-      }
     }
   }
 }
