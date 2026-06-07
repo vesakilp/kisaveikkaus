@@ -90,3 +90,68 @@ Consider adding to your repository:
 - [ ] GitHub secret scanning enabled
 - [ ] Pre-commit hooks to prevent committing secrets
 - [ ] Regular security audits with `npm audit`
+
+---
+
+## 🛡️ Security Vulnerability Reporting
+
+If you discover a security vulnerability, **DO NOT** create a public GitHub issue. Instead:
+
+1. Email security concerns to: [security@example.com]
+2. Provide detailed description of the issue
+3. Wait for acknowledgment (we respond within 48 hours)
+4. Coordinate disclosure with us
+
+## 📊 Security Audits
+
+We conduct regular security audits:
+- See [SECURITY_AUDIT.md](./SECURITY_AUDIT.md) for the latest audit results
+- See [AUTH_DOCS.md](./AUTH_DOCS.md) for authentication documentation
+
+## 🔐 Security Best Practices
+
+### Passwords
+- Minimum 12 characters (recommended)
+- Use Argon2 hashing (upgrade from bcrypt planned)
+- Never store plaintext passwords
+- Never log passwords
+
+### Session Tokens
+- HTTP-only cookies
+- Secure flag in production
+- SameSite=lax or strict
+- 7-day expiration
+- Redirect to login on expiration
+
+### API Security
+- Authentication on all protected endpoints
+- Rate limiting on authentication endpoints
+- Input validation on all endpoints
+- Error handling without sensitive information
+
+### Database
+- Always use Prisma ORM (no raw SQL)
+- Foreign key constraints
+- Cascade delete where appropriate
+- Regular backups
+
+### Environment Variables
+- Never commit .env files
+- Use strong random secrets
+- Rotate secrets regularly
+- Separate secrets for development and production
+
+## ✅ Security Checklist
+
+### Before Each Release:
+- [ ] Run npm audit
+- [ ] Update dependencies
+- [ ] Manual code review
+- [ ] Security scan
+- [ ] Penetration testing (for major releases)
+
+### Monthly:
+- [ ] Dependency updates
+- [ ] Review logs for suspicious activity
+- [ ] Clean up old sessions
+- [ ] User audit

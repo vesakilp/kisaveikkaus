@@ -1,9 +1,16 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key-change-this-in-production"
-);
+// Validate JWT_SECRET is properly set
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error(
+    "JWT_SECRET environment variable must be set and at least 32 characters long. " +
+    "Generate a secure secret with: openssl rand -base64 32"
+  );
+}
+
+const secret = new TextEncoder().encode(JWT_SECRET);
 
 export interface SessionUser {
   id: number;
