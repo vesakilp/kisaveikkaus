@@ -46,14 +46,43 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 /**
  * Validate email format
  */
-export function validateEmail(email: string): { valid: boolean; error?: string } {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
-  if (!emailRegex.test(email)) {
+export function validateEmail(email: string): {
+  valid: boolean;
+  normalizedEmail?: string;
+  error?: string;
+} {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (normalizedEmail.length === 0 || normalizedEmail.length > 254) {
     return { valid: false, error: "Virheellinen sähköpostiosoite" };
   }
 
-  return { valid: true };
+  if (normalizedEmail.includes(" ")) {
+    return { valid: false, error: "Virheellinen sähköpostiosoite" };
+  }
+
+  const atIndex = normalizedEmail.indexOf("@");
+  if (atIndex <= 0 || atIndex !== normalizedEmail.lastIndexOf("@")) {
+    return { valid: false, error: "Virheellinen sähköpostiosoite" };
+  }
+
+  const localPart = normalizedEmail.slice(0, atIndex);
+  const domainPart = normalizedEmail.slice(atIndex + 1);
+
+  if (!localPart || !domainPart || !domainPart.includes(".")) {
+    return { valid: false, error: "Virheellinen sähköpostiosoite" };
+  }
+
+  if (
+    domainPart.startsWith(".") ||
+    domainPart.endsWith(".") ||
+    domainPart.includes("..") ||
+    localPart.includes("..")
+  ) {
+    return { valid: false, error: "Virheellinen sähköpostiosoite" };
+  }
+
+  return { valid: true, normalizedEmail };
 }
 
 /**

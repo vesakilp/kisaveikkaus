@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     if (!emailValidation.valid) {
       return NextResponse.json({ error: emailValidation.error }, { status: 400 });
     }
+    const normalizedEmail = emailValidation.normalizedEmail!;
 
     // Validate password
     const passwordValidation = validatePassword(password);
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         passwordHash,
         displayName: displayName.trim(),
         isAdmin: false,
