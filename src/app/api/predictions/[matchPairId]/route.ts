@@ -2,6 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
 import { NextResponse } from "next/server";
 
+function parseScoreInput(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  return isNaN(n) ? null : n;
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ matchPairId: string }> }
@@ -37,14 +43,14 @@ export async function PUT(
       },
     },
     update: {
-      homeScore: homeScore !== undefined && homeScore !== "" ? Number(homeScore) : null,
-      awayScore: awayScore !== undefined && awayScore !== "" ? Number(awayScore) : null,
+      homeScore: parseScoreInput(homeScore),
+      awayScore: parseScoreInput(awayScore),
     },
     create: {
       userId: session.id,
       matchPairId: Number(matchPairId),
-      homeScore: homeScore !== undefined && homeScore !== "" ? Number(homeScore) : null,
-      awayScore: awayScore !== undefined && awayScore !== "" ? Number(awayScore) : null,
+      homeScore: parseScoreInput(homeScore),
+      awayScore: parseScoreInput(awayScore),
     },
   });
 

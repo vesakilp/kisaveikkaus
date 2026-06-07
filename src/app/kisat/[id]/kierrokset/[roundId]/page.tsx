@@ -29,6 +29,9 @@ interface Prediction {
 
 type ScoreField = "homeScore" | "awayScore";
 
+const MAX_SCORE_DIGITS = 2;
+const SCORE_INPUT_PATTERN = new RegExp(`^\\d{0,${MAX_SCORE_DIGITS}}$`);
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fi-FI", {
     day: "2-digit",
@@ -108,8 +111,8 @@ export default function RoundPredictionPage() {
 
   const handleScoreChange = useCallback(
     (matchPairId: number, field: ScoreField, value: string) => {
-      // Allow only empty string or non-negative integers
-      if (value !== "" && !/^\d{0,2}$/.test(value)) return;
+      // Allow only empty string or non-negative integers up to MAX_SCORE_DIGITS
+      if (value !== "" && !SCORE_INPUT_PATTERN.test(value)) return;
 
       setScores((prev) => {
         const current = prev[matchPairId] ?? { homeScore: "", awayScore: "" };
@@ -186,9 +189,9 @@ export default function RoundPredictionPage() {
                     <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
                       <span className="font-medium text-gray-900 truncate">{m.homeTeam}</span>
                       <input
-                        type="number"
-                        min="0"
-                        max="99"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={s.homeScore}
                         onChange={(e) => handleScoreChange(m.id, "homeScore", e.target.value)}
                         placeholder="–"
@@ -201,9 +204,9 @@ export default function RoundPredictionPage() {
                     {/* Away score + team */}
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <input
-                        type="number"
-                        min="0"
-                        max="99"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={s.awayScore}
                         onChange={(e) => handleScoreChange(m.id, "awayScore", e.target.value)}
                         placeholder="–"
