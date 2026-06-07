@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
-import { hashResetToken } from "@/lib/auth/password-reset";
+import { hashResetToken, RESET_TOKEN_HEX_LENGTH } from "@/lib/auth/password-reset";
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const token = String(body?.token || "").trim();
     const password = String(body?.password || "");
 
-    if (!token || token.length < 32) {
+    if (!token || token.length !== RESET_TOKEN_HEX_LENGTH) {
       return NextResponse.json(
         { error: "Virheellinen tai vanhentunut palautuslinkki" },
         { status: 400 }
@@ -50,10 +50,12 @@ export async function POST(request: Request) {
         where: { id: resetToken.id },
         data: { usedAt: new Date() },
       }),
+      // Invalidate previously issued reset links for the same user.
       prisma.passwordResetToken.deleteMany({
         where: {
           userId: resetToken.userId,
           id: { not: resetToken.id },
+          usedAt: null,
         },
       }),
     ]);

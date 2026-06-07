@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { RESET_TOKEN_HEX_LENGTH } from "@/lib/auth/password-reset";
 
 interface SmtpConfig {
   host: string;
@@ -39,12 +40,20 @@ function getSmtpConfig(): SmtpConfig | null {
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
+  if (token.length !== RESET_TOKEN_HEX_LENGTH || !/^[a-f0-9]+$/.test(token)) {
+    throw new Error("Invalid reset token format");
+  }
+
   const resetUrl = `${getBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`;
   const smtpConfig = getSmtpConfig();
 
   if (!smtpConfig) {
-    console.info(`Password reset link for ${email}: ${resetUrl}`);
-    return;
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`SMTP is not configured. Development reset link for ${email}: ${resetUrl}`);
+      return;
+    }
+
+    throw new Error("SMTP configuration is missing");
   }
 
   const transporter = nodemailer.createTransport({
@@ -57,6 +66,8 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     },
   });
 
+  await transporter.verify();
+
   await transporter.sendMail({
     from: smtpConfig.from,
     to: email,
@@ -68,7 +79,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       `Jos et pyytänyt salasanan palautusta, voit jättää tämän viestin huomiotta.`,
     html:
       `<p>Pyysit salasanan palautusta.</p>` +
-      `<p><a href="${resetUrl}">Aseta uusi salasana</a></p>` +
+      `<p><a href="${resetUrl}" aria-label="Aseta uusi salasana Kisaveikkaus-palveluun">Aseta uusi salasana Kisaveikkaus-palveluun</a></p>` +
       `<p>Linkki vanhenee 1 tunnin kuluttua.</p>` +
       `<p>Jos et pyytänyt salasanan palautusta, voit jättää tämän viestin huomiotta.</p>`,
   });

@@ -10,15 +10,16 @@ const SUCCESS_MESSAGE =
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const email = String(body?.email || "").toLowerCase().trim();
+    const email = String(body?.email || "");
 
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
       return NextResponse.json({ error: emailValidation.error }, { status: 400 });
     }
+    const normalizedEmail = emailValidation.normalizedEmail!;
 
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       select: { id: true, email: true },
     });
 

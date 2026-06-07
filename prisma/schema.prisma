@@ -78,4 +78,5 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([userId, usedAt, expiresAt])
 }
