@@ -8,22 +8,10 @@ export async function GET() {
     return NextResponse.json({ error: "Kirjaudu sisään" }, { status: 401 });
   }
 
-  const now = new Date();
-
   const competitions = await prisma.competition.findMany({
-    where: {
-      rounds: {
-        some: {
-          bettingEnd: { gte: now },
-        },
-      },
-    },
     include: {
       rounds: {
-        where: {
-          bettingEnd: { gte: now },
-        },
-        orderBy: { bettingStart: "asc" },
+        orderBy: { createdAt: "asc" },
         include: { _count: { select: { matchPairs: true } } },
       },
     },
