@@ -2,10 +2,16 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
 import { NextResponse } from "next/server";
 
+const MAX_SCORE = 99;
+
+/**
+ * Parses a score input value.
+ * Returns null for empty/invalid/out-of-range input (treated as cleared score).
+ */
 function parseScoreInput(value: unknown): number | null {
   if (value === undefined || value === null || value === "") return null;
   const n = Number(value);
-  return isNaN(n) || n < 0 ? null : n;
+  return isNaN(n) || n < 0 || n > MAX_SCORE ? null : n;
 }
 
 export async function PUT(
