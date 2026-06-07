@@ -12,6 +12,8 @@ interface MatchPair {
   homeTeam: string;
   awayTeam: string;
   matchDate: string;
+  actualHomeScore: number | null;
+  actualAwayScore: number | null;
 }
 
 interface Round {
@@ -54,6 +56,10 @@ export default function RoundPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { confirm, dialog } = useConfirm();
 
+  const [resultMatchId, setResultMatchId] = useState<number | null>(null);
+  const [resultForm, setResultForm] = useState({ actualHomeScore: "", actualAwayScore: "" });
+  const [savingResult, setSavingResult] = useState(false);
+
   useEffect(() => {
     fetch(`/api/rounds/${roundId}`)
       .then((r) => r.json())
@@ -93,6 +99,23 @@ export default function RoundPage() {
     const ok = await confirm("Poista ottelu", `Poistetaanko ottelu ${label}?`, true);
     if (!ok) return;
     await fetch(`/api/match-pairs/${matchId}`, { method: "DELETE" });
+    refresh();
+  };
+
+  const handleSaveResult = async (matchId: number) => {
+    const ok = await confirm("Tallenna tulos", `Tallennetaanko tulos ${resultForm.actualHomeScore}–${resultForm.actualAwayScore}?`);
+    if (!ok) return;
+    setSavingResult(true);
+    await fetch(`/api/match-pairs/${matchId}/result`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        actualHomeScore: resultForm.actualHomeScore === "" ? null : Number(resultForm.actualHomeScore),
+        actualAwayScore: resultForm.actualAwayScore === "" ? null : Number(resultForm.actualAwayScore),
+      }),
+    });
+    setResultMatchId(null);
+    setSavingResult(false);
     refresh();
   };
 
@@ -267,6 +290,38 @@ export default function RoundPage() {
                       </div>
                     </div>
                   </div>
+                ) : resultMatchId === match.id ? (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-gray-700">Syötä lopputulos: {match.homeTeam} – {match.awayTeam}</p>
+                    <div className="flex items-center gap-3">
+                      <input
+                        autoFocus
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={resultForm.actualHomeScore}
+                        onChange={(e) => { if (/^\d{0,2}$/.test(e.target.value)) setResultForm({ ...resultForm, actualHomeScore: e.target.value }); }}
+                        placeholder="–"
+                        className="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center text-sm font-semibold focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                      />
+                      <span className="font-bold text-gray-400">–</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={resultForm.actualAwayScore}
+                        onChange={(e) => { if (/^\d{0,2}$/.test(e.target.value)) setResultForm({ ...resultForm, actualAwayScore: e.target.value }); }}
+                        placeholder="–"
+                        className="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center text-sm font-semibold focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button onClick={() => handleSaveResult(match.id)} disabled={savingResult} className="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-3 py-2 text-sm text-white transition-colors hover:bg-green-700 disabled:opacity-50 sm:w-auto">
+                        {savingResult ? "Tallennetaan…" : "Tallenna tulos"}
+                      </button>
+                      <button onClick={() => setResultMatchId(null)} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto">Peruuta</button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
@@ -276,8 +331,25 @@ export default function RoundPage() {
                         <span className="text-gray-400">vs</span>
                         <span className="truncate">{match.awayTeam}</span>
                       </div>
+                      {match.actualHomeScore !== null && match.actualAwayScore !== null && (
+                        <p className="mt-1 text-sm font-semibold text-green-700">
+                          Tulos: {match.actualHomeScore}–{match.actualAwayScore}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                      <button
+                        onClick={() => {
+                          setResultMatchId(match.id);
+                          setResultForm({
+                            actualHomeScore: match.actualHomeScore !== null ? String(match.actualHomeScore) : "",
+                            actualAwayScore: match.actualAwayScore !== null ? String(match.actualAwayScore) : "",
+                          });
+                        }}
+                        className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-50 sm:w-auto"
+                      >
+                        {match.actualHomeScore !== null ? "Muokkaa tulosta" : "Syötä tulos"}
+                      </button>
                       <button
                         onClick={() => {
                           setEditMatchId(match.id);

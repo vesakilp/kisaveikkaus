@@ -58,7 +58,15 @@ export default function KisatPage() {
                 key={competition.id}
                 className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5"
               >
-                <h2 className="mb-3 text-lg font-bold text-gray-900">{competition.name}</h2>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-bold text-gray-900">{competition.name}</h2>
+                  <Link
+                    href={`/kisat/${competition.id}/pistetaulukko`}
+                    className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                  >
+                    🏆 Pistetaulukko
+                  </Link>
+                </div>
                 <div className="space-y-3">
                   {competition.rounds.map((round) => (
                     <div
