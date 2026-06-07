@@ -4,14 +4,20 @@ import { NextResponse } from "next/server";
 
 const MAX_SCORE = 99;
 
+interface ParsedScoreInput {
+  value: number | null;
+  valid: boolean;
+}
+
 /**
  * Parses a score input value.
- * Returns null for empty/invalid/out-of-range input (treated as cleared score).
+ * Empty value is treated as cleared score.
  */
-function parseScoreInput(value: unknown): number | null {
-  if (value === undefined || value === null || value === "") return null;
+function parseScoreInput(value: unknown): ParsedScoreInput {
+  if (value === undefined || value === null || value === "") return { value: null, valid: true };
   const n = Number(value);
-  return isNaN(n) || n < 0 || n > MAX_SCORE ? null : n;
+  if (!Number.isInteger(n) || n < 0 || n > MAX_SCORE) return { value: null, valid: false };
+  return { value: n, valid: true };
 }
 
 export async function PUT(
@@ -25,6 +31,15 @@ export async function PUT(
 
   const { matchPairId } = await params;
   const { homeScore, awayScore } = await request.json();
+  const parsedHomeScore = parseScoreInput(homeScore);
+  const parsedAwayScore = parseScoreInput(awayScore);
+
+  if (!parsedHomeScore.valid || !parsedAwayScore.valid) {
+    return NextResponse.json(
+      { error: "Annettujen maalien pitää olla kokonaisluku väliltä 0-99" },
+      { status: 400 }
+    );
+  }
 
   // Validate that the round's betting window is still open
   const matchPair = await prisma.matchPair.findUnique({
@@ -49,14 +64,14 @@ export async function PUT(
       },
     },
     update: {
-      homeScore: parseScoreInput(homeScore),
-      awayScore: parseScoreInput(awayScore),
+      homeScore: parsedHomeScore.value,
+      awayScore: parsedAwayScore.value,
     },
     create: {
       userId: session.id,
       matchPairId: Number(matchPairId),
-      homeScore: parseScoreInput(homeScore),
-      awayScore: parseScoreInput(awayScore),
+      homeScore: parsedHomeScore.value,
+      awayScore: parsedAwayScore.value,
     },
   });
 
