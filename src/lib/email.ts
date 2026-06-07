@@ -1,14 +1,5 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { RESET_TOKEN_HEX_LENGTH } from "@/lib/auth/password-reset";
-
-interface SmtpConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  user: string;
-  pass: string;
-  from: string;
-}
 
 function getBaseUrl(): string {
   const appUrl =
@@ -18,58 +9,28 @@ function getBaseUrl(): string {
   return appUrl.replace(/\/$/, "");
 }
 
-function getSmtpConfig(): SmtpConfig | null {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || "587");
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.MAIL_FROM;
-
-  if (!host || !user || !pass || !from || Number.isNaN(port)) {
-    return null;
-  }
-
-  return {
-    host,
-    port,
-    secure: process.env.SMTP_SECURE === "true" || port === 465,
-    user,
-    pass,
-    from,
-  };
-}
-
 export async function sendPasswordResetEmail(email: string, token: string) {
   if (token.length !== RESET_TOKEN_HEX_LENGTH || !/^[a-f0-9]+$/.test(token)) {
     throw new Error("Invalid reset token format");
   }
 
   const resetUrl = `${getBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`;
-  const smtpConfig = getSmtpConfig();
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.MAIL_FROM || "onboarding@resend.dev";
 
-  if (!smtpConfig) {
+  if (!resendApiKey) {
     if (process.env.NODE_ENV !== "production") {
-      console.info(`SMTP is not configured. Development reset link for ${email}: ${resetUrl}`);
+      console.info(`Resend is not configured. Development reset link for ${email}: ${resetUrl}`);
       return;
     }
 
-    throw new Error("SMTP configuration is missing");
+    throw new Error("RESEND_API_KEY is missing");
   }
 
-  const transporter = nodemailer.createTransport({
-    host: smtpConfig.host,
-    port: smtpConfig.port,
-    secure: smtpConfig.secure,
-    auth: {
-      user: smtpConfig.user,
-      pass: smtpConfig.pass,
-    },
-  });
+  const resend = new Resend(resendApiKey);
 
-  await transporter.verify();
-
-  await transporter.sendMail({
-    from: smtpConfig.from,
+  await resend.emails.send({
+    from: fromEmail,
     to: email,
     subject: "Salasanan palautus",
     text:
