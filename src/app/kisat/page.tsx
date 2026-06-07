@@ -21,11 +21,16 @@ interface Competition {
 export default function KisatPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/competitions/active")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Kisoja ei voitu ladata");
+        return r.json();
+      })
       .then((data) => setCompetitions(Array.isArray(data) ? data : []))
+      .catch(() => setError("Kisoja ei voitu ladata. Yritä päivittää sivu."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -38,6 +43,10 @@ export default function KisatPage() {
       <main className="max-w-3xl mx-auto px-4 py-8">
         {loading ? (
           <p className="text-gray-400 text-center py-12">Ladataan…</p>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+            ⚠️ {error}
+          </div>
         ) : competitions.length === 0 ? (
           <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
             <p className="text-gray-400">Ei käynnissä olevia kisoja tällä hetkellä</p>

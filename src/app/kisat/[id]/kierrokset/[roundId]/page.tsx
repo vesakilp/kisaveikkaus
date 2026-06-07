@@ -55,11 +55,21 @@ export default function RoundPredictionPage() {
 
   // Track timeouts for hiding the ok icon
   const iconTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  // Track debounce timers per matchPairId
+  const saveTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  // Track save errors per matchPairId
+  const [saveErrors, setSaveErrors] = useState<Record<number, string>>({});
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/rounds/${roundId}`).then((r) => r.json()),
-      fetch(`/api/rounds/${roundId}/predictions`).then((r) => r.json()),
+      fetch(`/api/rounds/${roundId}`).then((r) => {
+        if (!r.ok) throw new Error("Kierrosta ei löydy");
+        return r.json();
+      }),
+      fetch(`/api/rounds/${roundId}/predictions`).then((r) => {
+        if (!r.ok) throw new Error("Veikkauksia ei voitu ladata");
+        return r.json();
+      }),
     ]).then(([roundData, predictionsData]: [Round, Prediction[]]) => {
       setRound(roundData);
       const initial: Record<number, { homeScore: string; awayScore: string }> = {};
@@ -71,26 +81,34 @@ export default function RoundPredictionPage() {
         };
       }
       setScores(initial);
-    }).finally(() => setLoading(false));
+    }).catch(() => setRound(null)).finally(() => setLoading(false));
   }, [roundId]);
 
   // Cleanup timers on unmount
   useEffect(() => {
-    const timers = iconTimers.current;
+    const iconT = iconTimers.current;
+    const saveT = saveTimers.current;
     return () => {
-      for (const t of Object.values(timers)) clearTimeout(t);
+      for (const t of Object.values(iconT)) clearTimeout(t);
+      for (const t of Object.values(saveT)) clearTimeout(t);
     };
   }, []);
 
   const savePrediction = useCallback(
     async (matchPairId: number, homeScore: string, awayScore: string) => {
       setSaving((prev) => ({ ...prev, [matchPairId]: true }));
+      setSaveErrors((prev) => { const n = { ...prev }; delete n[matchPairId]; return n; });
       try {
-        await fetch(`/api/predictions/${matchPairId}`, {
+        const res = await fetch(`/api/predictions/${matchPairId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ homeScore, awayScore }),
         });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setSaveErrors((prev) => ({ ...prev, [matchPairId]: data.error ?? "Tallennus epäonnistui" }));
+          return;
+        }
         setSavedAt((prev) => ({ ...prev, [matchPairId]: Date.now() }));
 
         // Hide the ok icon after 3 seconds
@@ -102,6 +120,8 @@ export default function RoundPredictionPage() {
             return next;
           });
         }, 3000);
+      } catch {
+        setSaveErrors((prev) => ({ ...prev, [matchPairId]: "Tallennus epäonnistui" }));
       } finally {
         setSaving((prev) => ({ ...prev, [matchPairId]: false }));
       }
@@ -117,8 +137,13 @@ export default function RoundPredictionPage() {
       setScores((prev) => {
         const current = prev[matchPairId] ?? { homeScore: "", awayScore: "" };
         const updated = { ...current, [field]: value };
-        // Auto-save when both fields are filled or when a field is cleared
-        savePrediction(matchPairId, updated.homeScore, updated.awayScore);
+
+        // Debounce auto-save: wait 500ms after last keystroke
+        if (saveTimers.current[matchPairId]) clearTimeout(saveTimers.current[matchPairId]);
+        saveTimers.current[matchPairId] = setTimeout(() => {
+          savePrediction(matchPairId, updated.homeScore, updated.awayScore);
+        }, 500);
+
         return { ...prev, [matchPairId]: updated };
       });
     },
@@ -173,6 +198,7 @@ export default function RoundPredictionPage() {
               const s = scores[m.id] ?? { homeScore: "", awayScore: "" };
               const isSaving = saving[m.id] ?? false;
               const showOk = savedAt[m.id] !== undefined;
+              const saveError = saveErrors[m.id];
 
               return (
                 <div
@@ -216,7 +242,7 @@ export default function RoundPredictionPage() {
                     </div>
 
                     {/* Save status icon */}
-                    <div className="w-6 shrink-0 flex items-center justify-center">
+                    <div className="w-6 shrink-0 flex items-center justify-center" title={saveError}>
                       {isSaving ? (
                         <svg
                           className="w-4 h-4 text-gray-300 animate-spin"
@@ -235,6 +261,20 @@ export default function RoundPredictionPage() {
                             className="opacity-75"
                             fill="currentColor"
                             d="M4 12a8 8 0 018-8v8H4z"
+                          />
+                        </svg>
+                      ) : saveError ? (
+                        <svg
+                          className="w-4 h-4 text-red-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
                           />
                         </svg>
                       ) : showOk ? (
