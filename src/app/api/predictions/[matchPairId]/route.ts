@@ -36,7 +36,7 @@ export async function PUT(
 
   if (!parsedHomeScore.valid || !parsedAwayScore.valid) {
     return NextResponse.json(
-      { error: "Annettujen maalien pitää olla nolla tai positiivinen kokonaisluku" },
+      { error: "Annettujen maalien pitää olla kokonaisluku väliltä 0-99" },
       { status: 400 }
     );
   }
