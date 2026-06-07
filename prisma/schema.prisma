@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-  id           Int          @id @default(autoincrement())
-  email        String       @unique
-  passwordHash String
-  displayName  String
-  isAdmin      Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  predictions  Prediction[]
+  id                  Int                  @id @default(autoincrement())
+  email               String               @unique
+  passwordHash        String
+  displayName         String
+  isAdmin             Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  predictions         Prediction[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Competition {
@@ -64,4 +65,17 @@ model Prediction {
   updatedAt   DateTime  @updatedAt
 
   @@unique([userId, matchPairId])
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

@@ -145,7 +145,22 @@ Required environment variables (see [.env.example](./.env.example)):
 DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=YOUR_KEY"
 
 # Direct connection (for migrations only)
-DIRECT_URL="postgres://username:password@db.prisma.io:5432/postgres?sslmode=require"
+DIRECT_URL="postgres://<username>:<password>@db.prisma.io:5432/postgres?sslmode=require"
+
+# JWT signing key (min. 32 chars)
+JWT_SECRET="your-super-secret-jwt-key-min-32-characters"
+```
+
+Optional SMTP settings for password reset emails:
+
+```bash
+SMTP_HOST="smtp.example.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="smtp-username"
+SMTP_PASS="smtp-password"
+MAIL_FROM="Kisaveikkaus <no-reply@example.com>"
+APP_URL="http://localhost:3000"
 ```
 
 **Never commit `.env` files!** Use:
