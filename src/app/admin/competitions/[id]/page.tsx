@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDateTimeInFinland, toDatetimeLocalInFinland } from "@/lib/timezone";
@@ -36,7 +36,7 @@ export default function CompetitionPage() {
   const [editRoundId, setEditRoundId] = useState<number | null>(null);
   const [editRound, setEditRound] = useState(emptyRound);
   const [refreshCount, setRefreshCount] = useState(0);
-  const refresh = useCallback(() => setRefreshCount((c) => c + 1), []);
+  const refresh = useCallback(() => setRefreshCount((count) => count + 1), []);
   const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
@@ -94,94 +94,105 @@ export default function CompetitionPage() {
     refresh();
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-gray-400">Ladataan…</p></div>;
-  if (!competition) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-red-500">Kisaa ei löydy</p></div>;
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-gray-400">Ladataan…</p></div>;
+  }
+
+  if (!competition) {
+    return <div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-red-500">Kisaa ei löydy</p></div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {dialog}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="flex items-center gap-3 mb-1">
-          <Link href="/admin" className="text-gray-400 hover:text-gray-600 transition-colors text-sm">← Kaikki kisat</Link>
-        </div>
-        <div className="flex items-center gap-3 mt-2">
-          {editingName ? (
-            <div className="flex gap-2 items-center flex-1">
-              <input
-                autoFocus
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button onClick={handleSaveName} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">Tallenna</button>
-              <button onClick={() => setEditingName(false)} className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors">Peruuta</button>
-            </div>
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold text-gray-900">{competition.name}</h1>
-              <button onClick={() => { setEditingName(true); setNameInput(competition.name); }} className="text-sm text-gray-400 hover:text-blue-600 transition-colors px-2 py-1 rounded-lg hover:bg-blue-50">
-                ✏️ Muokkaa
-              </button>
-            </>
-          )}
+      <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6">
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="mb-2 flex items-center gap-3">
+            <Link href="/admin" className="text-sm text-gray-400 transition-colors hover:text-gray-600">
+              ← Kaikki kisat
+            </Link>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {editingName ? (
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+                <input
+                  autoFocus
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-lg font-bold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:flex-1"
+                />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button onClick={handleSaveName} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm text-white transition-colors hover:bg-blue-700 sm:w-auto">Tallenna</button>
+                  <button onClick={() => setEditingName(false)} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto">Peruuta</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-gray-900">{competition.name}</h1>
+                <button onClick={() => { setEditingName(true); setNameInput(competition.name); }} className="inline-flex items-center rounded-lg px-2 py-1 text-sm text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                  ✏️ Muokkaa
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-4">
+      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Kierrokset</h2>
           <button
             onClick={() => setShowRoundForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+            className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:w-auto"
           >
             + Uusi kierros
           </button>
         </div>
 
         {showRoundForm && (
-          <form onSubmit={handleCreateRound} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Uusi kierros</h3>
+          <form onSubmit={handleCreateRound} className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <h3 className="mb-4 text-base font-semibold text-gray-900">Uusi kierros</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kierroksen nimi</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Kierroksen nimi</label>
                 <input
                   autoFocus
                   type="text"
                   value={roundForm.name}
                   onChange={(e) => setRoundForm({ ...roundForm, name: e.target.value })}
                   placeholder="Esim. Alkulohko A"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Veikkaus alkaa</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Veikkaus alkaa</label>
                   <input
                     type="datetime-local"
                     value={roundForm.bettingStart}
                     onChange={(e) => setRoundForm({ ...roundForm, bettingStart: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Veikkaus päättyy</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Veikkaus päättyy</label>
                   <input
                     type="datetime-local"
                     value={roundForm.bettingEnd}
                     onChange={(e) => setRoundForm({ ...roundForm, bettingEnd: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                     required
                   />
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-4">
-              <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                 {saving ? "Tallennetaan…" : "Tallenna"}
               </button>
-              <button type="button" onClick={() => { setShowRoundForm(false); setRoundForm(emptyRound); }} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+              <button type="button" onClick={() => { setShowRoundForm(false); setRoundForm(emptyRound); }} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto">
                 Peruuta
               </button>
             </div>
@@ -189,54 +200,54 @@ export default function CompetitionPage() {
         )}
 
         {competition.rounds.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
-            <p className="text-gray-400 mb-3">Ei kierroksia vielä</p>
-            <button onClick={() => setShowRoundForm(true)} className="text-blue-600 text-sm hover:underline">Luo ensimmäinen kierros →</button>
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
+            <p className="mb-3 text-gray-400">Ei kierroksia vielä</p>
+            <button onClick={() => setShowRoundForm(true)} className="text-sm text-blue-600 hover:underline">Luo ensimmäinen kierros →</button>
           </div>
         ) : (
           <div className="space-y-3">
-            {competition.rounds.map((r) => (
-              <div key={r.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-                {editRoundId === r.id ? (
+            {competition.rounds.map((round) => (
+              <div key={round.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                {editRoundId === round.id ? (
                   <div className="space-y-3">
                     <input
                       autoFocus
                       value={editRound.name}
                       onChange={(e) => setEditRound({ ...editRound, name: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                     />
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Veikkaus alkaa</label>
-                        <input type="datetime-local" value={editRound.bettingStart} onChange={(e) => setEditRound({ ...editRound, bettingStart: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="mb-1 block text-xs text-gray-500">Veikkaus alkaa</label>
+                        <input type="datetime-local" value={editRound.bettingStart} onChange={(e) => setEditRound({ ...editRound, bettingStart: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Veikkaus päättyy</label>
-                        <input type="datetime-local" value={editRound.bettingEnd} onChange={(e) => setEditRound({ ...editRound, bettingEnd: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="mb-1 block text-xs text-gray-500">Veikkaus päättyy</label>
+                        <input type="datetime-local" value={editRound.bettingEnd} onChange={(e) => setEditRound({ ...editRound, bettingEnd: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleSaveRound(r.id)} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">Tallenna</button>
-                      <button onClick={() => setEditRoundId(null)} className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors">Peruuta</button>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button onClick={() => handleSaveRound(round.id)} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm text-white transition-colors hover:bg-blue-700 sm:w-auto">Tallenna</button>
+                      <button onClick={() => setEditRoundId(null)} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto">Peruuta</button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900">{r.name}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Veikkaus: {formatDateTimeInFinland(r.bettingStart)} – {formatDateTimeInFinland(r.bettingEnd)}
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900">{round.name}</h3>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Veikkaus: {formatDateTimeInFinland(round.bettingStart)} – {formatDateTimeInFinland(round.bettingEnd)}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">{r._count.matchPairs} otteluparia</p>
+                      <p className="mt-0.5 text-xs text-gray-400">{round._count.matchPairs} otteluparia</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link href={`/admin/competitions/${id}/rounds/${r.id}`} className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                      <Link href={`/admin/competitions/${id}/rounds/${round.id}`} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:w-auto">
                         Avaa
                       </Link>
-                      <button onClick={() => { setEditRoundId(r.id); setEditRound({ name: r.name, bettingStart: toDatetimeLocalInFinland(r.bettingStart), bettingEnd: toDatetimeLocalInFinland(r.bettingEnd) }); }} className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, bettingStart: toDatetimeLocalInFinland(round.bettingStart), bettingEnd: toDatetimeLocalInFinland(round.bettingEnd) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
                         Muokkaa
                       </button>
-                      <button onClick={() => handleDeleteRound(r.id, r.name)} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button onClick={() => handleDeleteRound(round.id, round.name)} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 sm:w-auto">
                         Poista
                       </button>
                     </div>

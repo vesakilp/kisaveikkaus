@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatDateTimeInFinland } from "@/lib/timezone";
 
 interface Round {
@@ -36,47 +36,45 @@ export default function KisatPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+      <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6">
         <h1 className="text-xl font-bold text-gray-900">Käynnissä olevat kisat</h1>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
         {loading ? (
-          <p className="text-gray-400 text-center py-12">Ladataan…</p>
+          <p className="py-12 text-center text-gray-400">Ladataan…</p>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             ⚠️ {error}
           </div>
         ) : competitions.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
             <p className="text-gray-400">Ei käynnissä olevia kisoja tällä hetkellä</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {competitions.map((c) => (
+            {competitions.map((competition) => (
               <div
-                key={c.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5"
+                key={competition.id}
+                className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5"
               >
-                <h2 className="text-lg font-bold text-gray-900 mb-3">{c.name}</h2>
-                <div className="space-y-2">
-                  {c.rounds.map((r) => (
+                <h2 className="mb-3 text-lg font-bold text-gray-900">{competition.name}</h2>
+                <div className="space-y-3">
+                  {competition.rounds.map((round) => (
                     <div
-                      key={r.id}
-                      className="flex items-center justify-between gap-4 bg-gray-50 rounded-xl px-4 py-3"
+                      key={round.id}
+                      className="flex flex-col gap-3 rounded-xl bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{r.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Veikkaus päättyy: {formatDateTimeInFinland(r.bettingEnd)}
+                        <p className="truncate font-medium text-gray-900">{round.name}</p>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          Veikkaus päättyy: {formatDateTimeInFinland(round.bettingEnd)}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {r._count.matchPairs} otteluparia
-                        </p>
+                        <p className="mt-0.5 text-xs text-gray-400">{round._count.matchPairs} otteluparia</p>
                       </div>
                       <Link
-                        href={`/kisat/${c.id}/kierrokset/${r.id}`}
-                        className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        href={`/kisat/${competition.id}/kierrokset/${round.id}`}
+                        className="inline-flex w-full shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:w-auto"
                       >
                         Veikkaa →
                       </Link>

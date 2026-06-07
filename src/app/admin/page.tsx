@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 interface Competition {
@@ -20,7 +20,7 @@ export default function AdminPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [refreshCount, setRefreshCount] = useState(0);
-  const refresh = useCallback(() => setRefreshCount((c) => c + 1), []);
+  const refresh = useCallback(() => setRefreshCount((count) => count + 1), []);
   const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
@@ -72,45 +72,47 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {dialog}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">Hallintapaneeli</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
-        >
-          + Uusi kisa
-        </button>
+      <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl font-bold text-gray-900">Hallintapaneeli</h1>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:w-auto"
+          >
+            + Uusi kisa
+          </button>
+        </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
         {showForm && (
-          <form
-            onSubmit={handleCreate}
-            className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6"
-          >
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Uusi kisa</h2>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kisan nimi</label>
+          <form onSubmit={handleCreate} className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900">Uusi kisa</h2>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Kisan nimi</label>
             <input
               autoFocus
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Esim. Jalkapallon MM-kisat 2026"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               required
             />
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {saving ? "Tallennetaan…" : "Tallenna"}
               </button>
               <button
                 type="button"
-                onClick={() => { setShowForm(false); setNewName(""); }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                onClick={() => {
+                  setShowForm(false);
+                  setNewName("");
+                }}
+                className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
               >
                 Peruuta
               </button>
@@ -119,72 +121,74 @@ export default function AdminPage() {
         )}
 
         {loading ? (
-          <p className="text-gray-400 text-center py-12">Ladataan…</p>
+          <p className="py-12 text-center text-gray-400">Ladataan…</p>
         ) : competitions.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
-            <p className="text-gray-400 mb-3">Ei kisoja vielä</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="text-blue-600 text-sm hover:underline"
-            >
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
+            <p className="mb-3 text-gray-400">Ei kisoja vielä</p>
+            <button onClick={() => setShowForm(true)} className="text-sm text-blue-600 hover:underline">
               Luo ensimmäinen kisa →
             </button>
           </div>
         ) : (
           <div className="space-y-3">
-            {competitions.map((c) => (
+            {competitions.map((competition) => (
               <div
-                key={c.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex items-center gap-4"
+                key={competition.id}
+                className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
               >
-                {editId === c.id ? (
-                  <div className="flex-1 flex gap-2">
+                {editId === competition.id ? (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <input
                       autoFocus
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:flex-1"
                     />
-                    <button
-                      onClick={() => handleEdit(c.id)}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                    >
-                      Tallenna
-                    </button>
-                    <button
-                      onClick={() => setEditId(null)}
-                      className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-                    >
-                      Peruuta
-                    </button>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button
+                        onClick={() => handleEdit(competition.id)}
+                        className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm text-white transition-colors hover:bg-blue-700 sm:w-auto"
+                      >
+                        Tallenna
+                      </button>
+                      <button
+                        onClick={() => setEditId(null)}
+                        className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto"
+                      >
+                        Peruuta
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{c.name}</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">{c._count.rounds} kierrosta</p>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="truncate font-semibold text-gray-900">{competition.name}</h3>
+                      <p className="mt-0.5 text-xs text-gray-400">{competition._count.rounds} kierrosta</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                       <Link
-                        href={`/admin/competitions/${c.id}`}
-                        className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                        href={`/admin/competitions/${competition.id}`}
+                        className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:w-auto"
                       >
                         Avaa
                       </Link>
                       <button
-                        onClick={() => { setEditId(c.id); setEditName(c.name); }}
-                        className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        onClick={() => {
+                          setEditId(competition.id);
+                          setEditName(competition.name);
+                        }}
+                        className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto"
                       >
                         Muokkaa
                       </button>
                       <button
-                        onClick={() => handleDelete(c.id, c.name)}
-                        className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        onClick={() => handleDelete(competition.id, competition.name)}
+                        className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 sm:w-auto"
                       >
                         Poista
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             ))}
