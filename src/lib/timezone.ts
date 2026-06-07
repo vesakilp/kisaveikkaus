@@ -1,9 +1,5 @@
 export const FINLAND_TIME_ZONE = "Europe/Helsinki";
 
-function pad(value: number) {
-  return String(value).padStart(2, "0");
-}
-
 function getTimeZoneOffsetMinutes(date: Date, timeZone: string) {
   const offsetText = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -75,12 +71,19 @@ export function parseDateTimeInput(input: unknown) {
   const day = Number(localMatch[3]);
   const hour = Number(localMatch[4]);
   const minute = Number(localMatch[5]);
+  if (hour > 23 || minute > 59) return null;
+
+  const calendarValidationDate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    calendarValidationDate.getUTCFullYear() !== year ||
+    calendarValidationDate.getUTCMonth() + 1 !== month ||
+    calendarValidationDate.getUTCDate() !== day
+  ) {
+    return null;
+  }
 
   const utcGuess = Date.UTC(year, month - 1, day, hour, minute);
   const offsetMinutes = getTimeZoneOffsetMinutes(new Date(utcGuess), FINLAND_TIME_ZONE);
   const parsed = new Date(utcGuess - offsetMinutes * 60_000);
-  if (Number.isNaN(parsed.getTime())) return null;
-
-  const normalizedInput = `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}`;
-  return toDatetimeLocalInFinland(parsed) === normalizedInput ? parsed : null;
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
