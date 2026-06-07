@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { formatDateTimeInFinland, toDatetimeLocalInFinland } from "@/lib/timezone";
 
 interface Round {
   id: number;
@@ -17,16 +18,6 @@ interface Competition {
   id: number;
   name: string;
   rounds: Round[];
-}
-
-function toDatetimeLocal(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("fi-FI", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 const emptyRound = { name: "", bettingStart: "", bettingEnd: "" };
@@ -234,7 +225,7 @@ export default function CompetitionPage() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900">{r.name}</h3>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Veikkaus: {formatDateTime(r.bettingStart)} – {formatDateTime(r.bettingEnd)}
+                        Veikkaus: {formatDateTimeInFinland(r.bettingStart)} – {formatDateTimeInFinland(r.bettingEnd)}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">{r._count.matchPairs} otteluparia</p>
                     </div>
@@ -242,7 +233,7 @@ export default function CompetitionPage() {
                       <Link href={`/admin/competitions/${id}/rounds/${r.id}`} className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium">
                         Avaa
                       </Link>
-                      <button onClick={() => { setEditRoundId(r.id); setEditRound({ name: r.name, bettingStart: toDatetimeLocal(r.bettingStart), bettingEnd: toDatetimeLocal(r.bettingEnd) }); }} className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button onClick={() => { setEditRoundId(r.id); setEditRound({ name: r.name, bettingStart: toDatetimeLocalInFinland(r.bettingStart), bettingEnd: toDatetimeLocalInFinland(r.bettingEnd) }); }} className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                         Muokkaa
                       </button>
                       <button onClick={() => handleDeleteRound(r.id, r.name)} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -14,12 +15,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { name, bettingStart, bettingEnd } = await request.json();
-  if (!name?.trim() || !bettingStart || !bettingEnd) {
+  const parsedBettingStart = parseDateTimeInput(bettingStart);
+  const parsedBettingEnd = parseDateTimeInput(bettingEnd);
+
+  if (!name?.trim() || !parsedBettingStart || !parsedBettingEnd) {
     return NextResponse.json({ error: "Kaikki kentät ovat pakollisia" }, { status: 400 });
   }
   const round = await prisma.round.update({
     where: { id: Number(id) },
-    data: { name: name.trim(), bettingStart: new Date(bettingStart), bettingEnd: new Date(bettingEnd) },
+    data: { name: name.trim(), bettingStart: parsedBettingStart, bettingEnd: parsedBettingEnd },
   });
   return NextResponse.json(round);
 }

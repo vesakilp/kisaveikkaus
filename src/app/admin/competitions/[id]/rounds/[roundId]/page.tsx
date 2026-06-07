@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { JsonInfoPopup } from "@/components/JsonInfoPopup";
+import { formatDateTimeInFinland } from "@/lib/timezone";
 
 interface MatchPair {
   id: number;
@@ -30,10 +31,6 @@ function toDateInput(iso: string) {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fi-FI", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("fi-FI", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 const emptyMatch = { homeTeam: "", awayTeam: "", matchDate: "" };
@@ -147,7 +144,7 @@ export default function RoundPage() {
         <div className="mt-2">
           <h1 className="text-2xl font-bold text-gray-900">{round.name}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Veikkaus: {formatDateTime(round.bettingStart)} – {formatDateTime(round.bettingEnd)}
+            Veikkaus: {formatDateTimeInFinland(round.bettingStart)} – {formatDateTimeInFinland(round.bettingEnd)}
           </p>
         </div>
       </header>
