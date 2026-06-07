@@ -7,6 +7,7 @@ const MAX_SCORE = 99;
 function parseScore(value: unknown): { value: number | null; valid: boolean } {
   if (value === undefined || value === null || value === "") return { value: null, valid: true };
   const n = Number(value);
+  // Number.isInteger returns false for NaN, so NaN inputs are rejected here
   if (!Number.isInteger(n) || n < 0 || n > MAX_SCORE) return { value: null, valid: false };
   return { value: n, valid: true };
 }
