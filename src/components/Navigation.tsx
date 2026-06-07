@@ -30,11 +30,6 @@ export default function Navigation() {
       .finally(() => setLoading(false));
   }, [pathname]);
 
-  useEffect(() => {
-    setShowUserMenu(false);
-    setShowMobileMenu(false);
-  }, [pathname]);
-
   const links = useMemo(() => {
     if (!user) return [];
 
@@ -51,17 +46,25 @@ export default function Navigation() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    setShowUserMenu(false);
-    setShowMobileMenu(false);
+    closeMenus();
     setUser(null);
     router.push("/");
     router.refresh();
   };
 
+  const closeMenus = () => {
+    setShowUserMenu(false);
+    setShowMobileMenu(false);
+  };
+
   return (
     <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Link href="/" className="text-lg font-bold text-gray-900 transition-colors hover:text-gray-700 sm:text-xl">
+        <Link
+          href="/"
+          onClick={closeMenus}
+          className="text-lg font-bold text-gray-900 transition-colors hover:text-gray-700 sm:text-xl"
+        >
           Kisaveikkaus
         </Link>
 
@@ -76,6 +79,7 @@ export default function Navigation() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      onClick={closeMenus}
                       className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
                     >
                       {link.label}
@@ -125,12 +129,14 @@ export default function Navigation() {
                 <>
                   <Link
                     href="/login"
+                    onClick={closeMenus}
                     className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
                   >
                     Kirjaudu
                   </Link>
                   <Link
                     href="/register"
+                    onClick={closeMenus}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                   >
                     Rekisteröidy
@@ -183,6 +189,7 @@ export default function Navigation() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      onClick={closeMenus}
                       className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
                     >
                       {link.label}
@@ -200,12 +207,14 @@ export default function Navigation() {
               <div className="flex flex-col gap-2">
                 <Link
                   href="/login"
+                  onClick={closeMenus}
                   className="rounded-lg border border-gray-200 px-4 py-2 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
                 >
                   Kirjaudu
                 </Link>
                 <Link
                   href="/register"
+                  onClick={closeMenus}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-blue-700"
                 >
                   Rekisteröidy
