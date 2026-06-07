@@ -14,7 +14,6 @@ export async function GET() {
     where: {
       rounds: {
         some: {
-          bettingStart: { lte: now },
           bettingEnd: { gte: now },
         },
       },
@@ -22,10 +21,9 @@ export async function GET() {
     include: {
       rounds: {
         where: {
-          bettingStart: { lte: now },
           bettingEnd: { gte: now },
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { bettingStart: "asc" },
         include: { _count: { select: { matchPairs: true } } },
       },
     },
