@@ -55,7 +55,7 @@ export default function UsersPage() {
     const ok = await confirm("Tallenna muutokset", "Tallennetaanko käyttäjän tiedot?");
     if (!ok) return;
 
-    const updateData: any = { displayName: editForm.displayName, isAdmin: editForm.isAdmin };
+    const updateData: { displayName: string; isAdmin: boolean; password?: string } = { displayName: editForm.displayName, isAdmin: editForm.isAdmin };
     if (editForm.password) {
       updateData.password = editForm.password;
     }

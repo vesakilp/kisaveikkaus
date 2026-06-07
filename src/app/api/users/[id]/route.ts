@@ -68,7 +68,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // Build update data
-    const updateData: any = {};
+    const updateData: { displayName?: string; isAdmin?: boolean; passwordHash?: string } = {};
     if (body.displayName) updateData.displayName = body.displayName.trim();
     if (body.isAdmin !== undefined) updateData.isAdmin = body.isAdmin;
     if (body.password) {

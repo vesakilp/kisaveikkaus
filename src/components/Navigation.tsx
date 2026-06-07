@@ -58,6 +58,12 @@ export default function Navigation() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              <Link
+                href="/kisat"
+                className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Kisat
+              </Link>
               {user.isAdmin && (
                 <Link
                   href="/admin"

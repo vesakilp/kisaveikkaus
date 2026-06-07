@@ -1,16 +1,16 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-// Validate JWT_SECRET is properly set
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  throw new Error(
-    "JWT_SECRET environment variable must be set and at least 32 characters long. " +
-    "Generate a secure secret with: openssl rand -base64 32"
-  );
+function getSecret(): Uint8Array {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    throw new Error(
+      "JWT_SECRET environment variable must be set and at least 32 characters long. " +
+      "Generate a secure secret with: openssl rand -base64 32"
+    );
+  }
+  return new TextEncoder().encode(JWT_SECRET);
 }
-
-const secret = new TextEncoder().encode(JWT_SECRET);
 
 export interface SessionUser {
   id: number;
@@ -27,7 +27,7 @@ export async function createSession(user: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .setIssuedAt()
-    .sign(secret);
+    .sign(getSecret());
 
   return token;
 }
@@ -37,7 +37,7 @@ export async function createSession(user: SessionUser): Promise<string> {
  */
 export async function verifySession(token: string): Promise<SessionUser | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret());
     return payload.user as SessionUser;
   } catch {
     return null;
