@@ -20,28 +20,31 @@ interface JsonInfoPopupProps {
 
 export function JsonInfoPopup({ isOpen, onClose }: JsonInfoPopupProps) {
   if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4">
-        <div className="flex justify-between items-center mb-4">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/30 p-4 sm:items-center sm:justify-center">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <h2 className="text-lg font-semibold text-gray-900">JSON-tiedoston muoto</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none">&times;</button>
+          <button onClick={onClose} className="text-2xl leading-none text-gray-400 transition-colors hover:text-gray-600">
+            &times;
+          </button>
         </div>
-        <p className="text-gray-600 mb-3 text-sm">
+        <p className="mb-3 text-sm text-gray-600">
           JSON-tiedoston tulee sisältää taulukko ottelupareista. Jokainen ottelu on objekti, jossa on seuraavat kentät:
         </p>
-        <ul className="text-sm text-gray-700 mb-4 space-y-1 list-disc list-inside">
-          <li><span className="font-mono bg-gray-100 px-1 rounded">homeTeam</span> – Kotijoukkueen nimi (teksti)</li>
-          <li><span className="font-mono bg-gray-100 px-1 rounded">awayTeam</span> – Vierasjoukkueen nimi (teksti)</li>
-          <li><span className="font-mono bg-gray-100 px-1 rounded">matchDate</span> – Ottelun päivämäärä ISO 8601 -muodossa</li>
+        <ul className="mb-4 list-inside list-disc space-y-1 text-sm text-gray-700">
+          <li><span className="rounded bg-gray-100 px-1 font-mono">homeTeam</span> – Kotijoukkueen nimi (teksti)</li>
+          <li><span className="rounded bg-gray-100 px-1 font-mono">awayTeam</span> – Vierasjoukkueen nimi (teksti)</li>
+          <li><span className="rounded bg-gray-100 px-1 font-mono">matchDate</span> – Ottelun päivämäärä ISO 8601 -muodossa</li>
         </ul>
-        <p className="text-sm font-medium text-gray-700 mb-2">Esimerkki:</p>
-        <pre className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs font-mono overflow-auto text-gray-800">
+        <p className="mb-2 text-sm font-medium text-gray-700">Esimerkki:</p>
+        <pre className="overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800">
           {JSON_EXAMPLE}
         </pre>
         <button
           onClick={onClose}
-          className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
         >
           Sulje
         </button>

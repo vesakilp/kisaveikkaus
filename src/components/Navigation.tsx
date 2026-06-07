@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface User {
   id: number;
@@ -16,7 +16,8 @@ export default function Navigation() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showMenu, setShowMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -29,123 +30,200 @@ export default function Navigation() {
       .finally(() => setLoading(false));
   }, [pathname]);
 
+  const links = useMemo(() => {
+    if (!user) return [];
+
+    return [
+      { href: "/kisat", label: "Kisat" },
+      ...(user.isAdmin
+        ? [
+            { href: "/admin", label: "Hallintapaneeli" },
+            { href: "/admin/users", label: "Käyttäjät" },
+          ]
+        : []),
+    ];
+  }, [user]);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    closeMenus();
     setUser(null);
     router.push("/");
     router.refresh();
   };
 
-  if (loading) {
-    return (
-      <nav className="bg-white border-b border-gray-200 px-6 py-3 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-gray-900">
-            Kisaveikkaus
-          </Link>
-        </div>
-      </nav>
-    );
-  }
+  const closeMenus = () => {
+    setShowUserMenu(false);
+    setShowMobileMenu(false);
+  };
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-6 py-3 shadow-sm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-gray-900 hover:text-gray-700">
+    <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <Link
+          href="/"
+          onClick={closeMenus}
+          className="text-lg font-bold text-gray-900 transition-colors hover:text-gray-700 sm:text-xl"
+        >
           Kisaveikkaus
         </Link>
 
-        <div className="flex items-center gap-4">
-          {user ? (
-            <>
-              <Link
-                href="/kisat"
-                className="text-sm text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Kisat
-              </Link>
-              {user.isAdmin && (
-                <Link
-                  href="/admin"
-                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
-                >
-                  Hallintapaneeli
-                </Link>
-              )}
-              {user.isAdmin && (
-                <Link
-                  href="/admin/users"
-                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
-                >
-                  Käyttäjät
-                </Link>
-              )}
-              <div className="relative">
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <span className="text-sm font-medium text-gray-900">{user.displayName}</span>
-                  {user.isAdmin && (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded font-medium">
-                      Admin
-                    </span>
-                  )}
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+        {loading ? (
+          <div className="h-9 w-24 animate-pulse rounded-lg bg-gray-100" />
+        ) : (
+          <>
+            <div className="hidden items-center gap-2 md:flex">
+              {user ? (
+                <>
+                  {links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenus}
+                      className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowUserMenu((value) => !value)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-gray-100"
+                    >
+                      <span className="max-w-36 truncate text-sm font-medium text-gray-900">{user.displayName}</span>
+                      {user.isAdmin && (
+                        <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                          Admin
+                        </span>
+                      )}
+                      <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
 
-                {showMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowMenu(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-xs text-gray-500">Kirjautunut:</p>
-                        <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
-                      </div>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        Kirjaudu ulos
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Kirjaudu
-              </Link>
-              <Link
-                href="/register"
-                className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Rekisteröidy
-              </Link>
-            </>
-          )}
-        </div>
+                    {showUserMenu && (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Sulje käyttäjävalikko"
+                          className="fixed inset-0 z-10"
+                          onClick={() => setShowUserMenu(false)}
+                        />
+                        <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                          <div className="border-b border-gray-100 px-4 py-3">
+                            <p className="text-xs text-gray-500">Kirjautunut:</p>
+                            <p className="truncate text-sm font-medium text-gray-900">{user.email}</p>
+                          </div>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                          >
+                            Kirjaudu ulos
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={closeMenus}
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    Kirjaudu
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={closeMenus}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                  >
+                    Rekisteröidy
+                  </Link>
+                </>
+              )}
+            </div>
+
+            <button
+              type="button"
+              aria-label={showMobileMenu ? "Sulje valikko" : "Avaa valikko"}
+              aria-expanded={showMobileMenu}
+              onClick={() => setShowMobileMenu((value) => !value)}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 md:hidden"
+            >
+              {showMobileMenu ? (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </>
+        )}
       </div>
+
+      {!loading && showMobileMenu && (
+        <div className="border-t border-gray-200 bg-white md:hidden">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
+            {user ? (
+              <>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-900">{user.displayName}</p>
+                      <p className="truncate text-xs text-gray-500">{user.email}</p>
+                    </div>
+                    {user.isAdmin && (
+                      <span className="shrink-0 rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenus}
+                      className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <button
+                    onClick={handleLogout}
+                    className="rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    Kirjaudu ulos
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/login"
+                  onClick={closeMenus}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+                >
+                  Kirjaudu
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={closeMenus}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  Rekisteröidy
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

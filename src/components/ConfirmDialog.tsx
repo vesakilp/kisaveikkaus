@@ -24,24 +24,23 @@ export function ConfirmDialog({
   danger = false,
 }: ConfirmDialogProps) {
   if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
-        <p className="text-gray-600 mb-6">{message}</p>
-        <div className="flex justify-end gap-3">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/30 p-4 sm:items-center sm:justify-center">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <h2 className="mb-2 text-lg font-semibold text-gray-900">{title}</h2>
+        <p className="mb-6 text-gray-600">{message}</p>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
-              danger
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-blue-600 hover:bg-blue-700"
+            className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2 font-medium text-white transition-colors sm:w-auto ${
+              danger ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
             {confirmLabel}
@@ -66,12 +65,12 @@ export function useConfirm() {
 
   const handleConfirm = () => {
     state.resolve?.(true);
-    setState((s) => ({ ...s, isOpen: false }));
+    setState((current) => ({ ...current, isOpen: false }));
   };
 
   const handleCancel = () => {
     state.resolve?.(false);
-    setState((s) => ({ ...s, isOpen: false }));
+    setState((current) => ({ ...current, isOpen: false }));
   };
 
   const dialog = (

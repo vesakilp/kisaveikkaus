@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { formatDateTimeInFinland } from "@/lib/timezone";
 
@@ -31,9 +31,7 @@ type ScoreField = "homeScore" | "awayScore";
 
 const MAX_SCORE_DIGITS = 2;
 const SCORE_INPUT_PATTERN = new RegExp(`^\\d{0,${MAX_SCORE_DIGITS}}$`);
-// Periodic fallback refresh for betting window state.
 const MAX_TIMER_DELAY_MS = 60_000;
-// Small post-boundary buffer to avoid updates firing slightly before boundary time.
 const BETTING_WINDOW_TICK_BUFFER_MS = 100;
 
 function scoreToString(score: number | null | undefined): string {
@@ -48,25 +46,42 @@ function formatDate(iso: string) {
   });
 }
 
+function StatusIcon({ isSaving, saveError, showOk }: { isSaving: boolean; saveError?: string; showOk: boolean }) {
+  return (
+    <div
+      className="flex h-6 w-6 shrink-0 items-center justify-center"
+      aria-label={isSaving ? "Tallennetaan" : saveError ? saveError : showOk ? "Tallennettu" : undefined}
+    >
+      {isSaving ? (
+        <svg className="h-4 w-4 animate-spin text-gray-300" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+      ) : saveError ? (
+        <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ) : showOk ? (
+        <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+        </svg>
+      ) : null}
+    </div>
+  );
+}
+
 export default function RoundPredictionPage() {
   const params = useParams();
   const roundId = params.roundId as string;
 
   const [round, setRound] = useState<Round | null>(null);
   const [loading, setLoading] = useState(true);
-  // scores[matchPairId] = { homeScore: string, awayScore: string }
   const [scores, setScores] = useState<Record<number, { homeScore: string; awayScore: string }>>({});
-  // savedAt[matchPairId] = timestamp when saved (for showing ok icon)
   const [savedAt, setSavedAt] = useState<Record<number, number>>({});
-  // saving[matchPairId] = true when request is in flight
   const [saving, setSaving] = useState<Record<number, boolean>>({});
   const [currentTime, setCurrentTime] = useState(() => Date.now());
-
-  // Track timeouts for hiding the ok icon
   const iconTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
-  // Track debounce timers per matchPairId
   const saveTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
-  // Track save errors per matchPairId
   const [saveErrors, setSaveErrors] = useState<Record<number, string>>({});
 
   useEffect(() => {
@@ -79,27 +94,30 @@ export default function RoundPredictionPage() {
         if (!r.ok) throw new Error("Veikkauksia ei voitu ladata");
         return r.json();
       }),
-    ]).then(([roundData, predictionsData]: [Round, Prediction[]]) => {
-      setRound(roundData);
-      const initial: Record<number, { homeScore: string; awayScore: string }> = {};
-      for (const mp of roundData.matchPairs ?? []) {
-        const pred = predictionsData.find((p) => p.matchPairId === mp.id);
-        initial[mp.id] = {
-          homeScore: scoreToString(pred?.homeScore),
-          awayScore: scoreToString(pred?.awayScore),
-        };
-      }
-      setScores(initial);
-    }).catch(() => setRound(null)).finally(() => setLoading(false));
+    ])
+      .then(([roundData, predictionsData]: [Round, Prediction[]]) => {
+        setRound(roundData);
+        const initial: Record<number, { homeScore: string; awayScore: string }> = {};
+        for (const matchPair of roundData.matchPairs ?? []) {
+          const prediction = predictionsData.find((item) => item.matchPairId === matchPair.id);
+          initial[matchPair.id] = {
+            homeScore: scoreToString(prediction?.homeScore),
+            awayScore: scoreToString(prediction?.awayScore),
+          };
+        }
+        setScores(initial);
+      })
+      .catch(() => setRound(null))
+      .finally(() => setLoading(false));
   }, [roundId]);
 
-  // Cleanup timers on unmount
   useEffect(() => {
-    const iconT = iconTimers.current;
-    const saveT = saveTimers.current;
+    const iconTimerValues = iconTimers.current;
+    const saveTimerValues = saveTimers.current;
+
     return () => {
-      for (const t of Object.values(iconT)) clearTimeout(t);
-      for (const t of Object.values(saveT)) clearTimeout(t);
+      for (const timer of Object.values(iconTimerValues)) clearTimeout(timer);
+      for (const timer of Object.values(saveTimerValues)) clearTimeout(timer);
     };
   }, []);
 
@@ -119,249 +137,205 @@ export default function RoundPredictionPage() {
     const start = new Date(round.bettingStart).getTime();
     const end = new Date(round.bettingEnd).getTime();
 
-    if (now < start) {
-      timers.push(setTimeout(tick, start - now + BETTING_WINDOW_TICK_BUFFER_MS));
-    }
-    if (now < end) {
-      timers.push(setTimeout(tick, end - now + BETTING_WINDOW_TICK_BUFFER_MS));
-    }
+    if (now < start) timers.push(setTimeout(tick, start - now + BETTING_WINDOW_TICK_BUFFER_MS));
+    if (now < end) timers.push(setTimeout(tick, end - now + BETTING_WINDOW_TICK_BUFFER_MS));
+
     let interval: ReturnType<typeof setInterval> | null = null;
     if (now < end) {
       const intervalId = setInterval(() => {
         const nextNow = Date.now();
         setCurrentTime(nextNow);
-        if (nextNow > end) {
-          clearInterval(intervalId);
-        }
+        if (nextNow > end) clearInterval(intervalId);
       }, MAX_TIMER_DELAY_MS);
       interval = intervalId;
     }
+
     return () => {
       if (interval) clearInterval(interval);
       for (const timer of timers) clearTimeout(timer);
     };
   }, [round]);
 
-  const savePrediction = useCallback(
-    async (matchPairId: number, homeScore: string, awayScore: string) => {
-      setSaving((prev) => ({ ...prev, [matchPairId]: true }));
-      setSaveErrors((prev) => { const n = { ...prev }; delete n[matchPairId]; return n; });
-      try {
-        const res = await fetch(`/api/predictions/${matchPairId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ homeScore, awayScore }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setSaveErrors((prev) => ({ ...prev, [matchPairId]: data.error ?? "Tallennus epäonnistui" }));
-          return;
-        }
-        setSavedAt((prev) => ({ ...prev, [matchPairId]: Date.now() }));
+  const savePrediction = useCallback(async (matchPairId: number, homeScore: string, awayScore: string) => {
+    setSaving((prev) => ({ ...prev, [matchPairId]: true }));
+    setSaveErrors((prev) => {
+      const next = { ...prev };
+      delete next[matchPairId];
+      return next;
+    });
 
-        // Hide the ok icon after 3 seconds
-        if (iconTimers.current[matchPairId]) clearTimeout(iconTimers.current[matchPairId]);
-        iconTimers.current[matchPairId] = setTimeout(() => {
-          setSavedAt((prev) => {
-            const next = { ...prev };
-            delete next[matchPairId];
-            return next;
-          });
-        }, 3000);
-      } catch {
-        setSaveErrors((prev) => ({ ...prev, [matchPairId]: "Tallennus epäonnistui" }));
-      } finally {
-        setSaving((prev) => ({ ...prev, [matchPairId]: false }));
-      }
-    },
-    []
-  );
-
-  const handleScoreChange = useCallback(
-    (matchPairId: number, field: ScoreField, value: string) => {
-      if (!round) return;
-      if (!bettingWindow.isOpen) return;
-
-      // Allow only empty string or non-negative integers up to MAX_SCORE_DIGITS
-      if (value !== "" && !SCORE_INPUT_PATTERN.test(value)) return;
-
-      setScores((prev) => {
-        const current = prev[matchPairId] ?? { homeScore: "", awayScore: "" };
-        const updated = { ...current, [field]: value };
-
-        // Debounce auto-save: wait 500ms after last keystroke
-        if (saveTimers.current[matchPairId]) clearTimeout(saveTimers.current[matchPairId]);
-        saveTimers.current[matchPairId] = setTimeout(() => {
-          savePrediction(matchPairId, updated.homeScore, updated.awayScore);
-        }, 500);
-
-        return { ...prev, [matchPairId]: updated };
+    try {
+      const res = await fetch(`/api/predictions/${matchPairId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ homeScore, awayScore }),
       });
-    },
-    [savePrediction, round, bettingWindow.isOpen]
-  );
 
-  if (loading)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveErrors((prev) => ({ ...prev, [matchPairId]: data.error ?? "Tallennus epäonnistui" }));
+        return;
+      }
+
+      setSavedAt((prev) => ({ ...prev, [matchPairId]: Date.now() }));
+
+      if (iconTimers.current[matchPairId]) clearTimeout(iconTimers.current[matchPairId]);
+      iconTimers.current[matchPairId] = setTimeout(() => {
+        setSavedAt((prev) => {
+          const next = { ...prev };
+          delete next[matchPairId];
+          return next;
+        });
+      }, 3000);
+    } catch {
+      setSaveErrors((prev) => ({ ...prev, [matchPairId]: "Tallennus epäonnistui" }));
+    } finally {
+      setSaving((prev) => ({ ...prev, [matchPairId]: false }));
+    }
+  }, []);
+
+  const handleScoreChange = useCallback((matchPairId: number, field: ScoreField, value: string) => {
+    if (!round || !bettingWindow.isOpen) return;
+    if (value !== "" && !SCORE_INPUT_PATTERN.test(value)) return;
+
+    setScores((prev) => {
+      const current = prev[matchPairId] ?? { homeScore: "", awayScore: "" };
+      const updated = { ...current, [field]: value };
+
+      if (saveTimers.current[matchPairId]) clearTimeout(saveTimers.current[matchPairId]);
+      saveTimers.current[matchPairId] = setTimeout(() => {
+        savePrediction(matchPairId, updated.homeScore, updated.awayScore);
+      }, 500);
+
+      return { ...prev, [matchPairId]: updated };
+    });
+  }, [bettingWindow.isOpen, round, savePrediction]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <p className="text-gray-400">Ladataan…</p>
       </div>
     );
+  }
 
-  if (!round)
+  if (!round) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <p className="text-red-500">Kierrosta ei löydy</p>
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Screen reader live region for save status announcements */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {Object.values(saving).some(Boolean) && "Tallennetaan…"}
         {Object.values(saveErrors).filter(Boolean).length > 0 && "Tallennus epäonnistui. Yritä uudelleen."}
       </div>
-      <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="flex items-center gap-3 mb-1">
-          <Link
-            href="/kisat"
-            className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
-          >
-            ← {round.competition.name}
-          </Link>
-        </div>
-        <div className="mt-2">
-          <h1 className="text-2xl font-bold text-gray-900">{round.name}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Veikkaus päättyy: {formatDateTimeInFinland(round.bettingEnd)}
-          </p>
+
+      <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6">
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="mb-2 flex items-center gap-3">
+            <Link href="/kisat" className="text-sm text-gray-400 transition-colors hover:text-gray-600">
+              ← {round.competition.name}
+            </Link>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{round.name}</h1>
+            <p className="mt-0.5 text-sm text-gray-500">
+              Veikkaus päättyy: {formatDateTimeInFinland(round.bettingEnd)}
+            </p>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <p className="text-sm text-gray-500 mb-4">
+      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+        <p className="mb-4 text-sm text-gray-500">
           Anna otteluiden tulokset. Tulokset tallentuvat automaattisesti.
         </p>
+
         {!bettingWindow.isOpen && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4"
-          >
+          <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
             Veikkausaika ei ole käynnissä. Veikkauksia ei voi muokata tällä hetkellä.
           </div>
         )}
 
         {round.matchPairs.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
             <p className="text-gray-400">Ei ottelupareja tässä kierroksessa</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {round.matchPairs.map((m) => {
-              const s = scores[m.id] ?? { homeScore: "", awayScore: "" };
-              const isSaving = saving[m.id] ?? false;
-              const showOk = savedAt[m.id] !== undefined;
-              const saveError = saveErrors[m.id];
+            {round.matchPairs.map((matchPair) => {
+              const score = scores[matchPair.id] ?? { homeScore: "", awayScore: "" };
+              const isSaving = saving[matchPair.id] ?? false;
+              const showOk = savedAt[matchPair.id] !== undefined;
+              const saveError = saveErrors[matchPair.id];
 
               return (
-                <div
-                  key={m.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-4"
-                >
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {/* Date */}
-                    <span className="text-xs text-gray-400 w-16 shrink-0">
-                      {formatDate(m.matchDate)}
-                    </span>
+                <div key={matchPair.id} className="rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-gray-400">{formatDate(matchPair.matchDate)}</span>
+                    <StatusIcon isSaving={isSaving} saveError={saveError} showOk={showOk} />
+                  </div>
 
-                    {/* Home team + score */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                      <span className="font-medium text-gray-900 truncate">{m.homeTeam}</span>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:hidden">
+                    <div className="space-y-2 rounded-xl bg-gray-50 p-3 text-center">
+                      <p className="truncate text-sm font-medium text-gray-900">{matchPair.homeTeam}</p>
                       <input
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        value={s.homeScore}
-                        onChange={(e) => handleScoreChange(m.id, "homeScore", e.target.value)}
+                        value={score.homeScore}
+                        onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
                         placeholder="–"
                         disabled={!bettingWindow.isOpen}
-                        className="w-12 text-center border border-gray-300 rounded-lg px-1 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                       />
                     </div>
-
-                    <span className="text-gray-400 font-bold shrink-0">–</span>
-
-                    {/* Away score + team */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="space-y-2 rounded-xl bg-gray-50 p-3 text-center">
+                      <p className="truncate text-sm font-medium text-gray-900">{matchPair.awayTeam}</p>
                       <input
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        value={s.awayScore}
-                        onChange={(e) => handleScoreChange(m.id, "awayScore", e.target.value)}
+                        value={score.awayScore}
+                        onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
                         placeholder="–"
                         disabled={!bettingWindow.isOpen}
-                        className="w-12 text-center border border-gray-300 rounded-lg px-1 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                       />
-                      <span className="font-medium text-gray-900 truncate">{m.awayTeam}</span>
                     </div>
+                  </div>
 
-                    {/* Save status icon */}
-                    <div
-                      className="w-6 shrink-0 flex items-center justify-center"
-                      aria-label={isSaving ? "Tallennetaan" : saveError ? saveError : showOk ? "Tallennettu" : undefined}
-                    >
-                      {isSaving ? (
-                        <svg
-                          className="w-4 h-4 text-gray-300 animate-spin"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v8H4z"
-                          />
-                        </svg>
-                      ) : saveError ? (
-                        <svg
-                          className="w-4 h-4 text-red-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      ) : showOk ? (
-                        <svg
-                          className="w-4 h-4 text-green-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      ) : null}
+                  <div className="mt-3 hidden items-center gap-3 sm:flex">
+                    <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                      <span className="truncate font-medium text-gray-900">{matchPair.homeTeam}</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={score.homeScore}
+                        onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
+                        placeholder="–"
+                        disabled={!bettingWindow.isOpen}
+                        className="w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                      />
+                    </div>
+                    <span className="shrink-0 font-bold text-gray-400">–</span>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={score.awayScore}
+                        onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
+                        placeholder="–"
+                        disabled={!bettingWindow.isOpen}
+                        className="w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                      />
+                      <span className="truncate font-medium text-gray-900">{matchPair.awayTeam}</span>
                     </div>
                   </div>
                 </div>
