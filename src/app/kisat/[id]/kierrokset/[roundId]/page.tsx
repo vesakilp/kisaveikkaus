@@ -30,13 +30,12 @@ interface Prediction {
 type ScoreField = "homeScore" | "awayScore";
 
 const MAX_SCORE_DIGITS = 2;
-const DEFAULT_SCORE = "0";
 const SCORE_INPUT_PATTERN = new RegExp(`^\\d{0,${MAX_SCORE_DIGITS}}$`);
 const MAX_TIMER_DELAY_MS = 60_000;
 const BETTING_WINDOW_TICK_BUFFER_MS = 100;
 
 function scoreToString(score: number | null | undefined): string {
-  return score !== null && score !== undefined ? String(score) : DEFAULT_SCORE;
+  return score !== null && score !== undefined ? String(score) : "";
 }
 
 function formatDate(iso: string) {
@@ -200,7 +199,7 @@ export default function RoundPredictionPage() {
     if (value !== "" && !SCORE_INPUT_PATTERN.test(value)) return;
 
     setScores((prev) => {
-      const current = prev[matchPairId] ?? { homeScore: DEFAULT_SCORE, awayScore: DEFAULT_SCORE };
+      const current = prev[matchPairId] ?? { homeScore: "", awayScore: "" };
       const updated = { ...current, [field]: value };
 
       if (saveTimers.current[matchPairId]) clearTimeout(saveTimers.current[matchPairId]);
@@ -269,7 +268,7 @@ export default function RoundPredictionPage() {
         ) : (
           <div className="space-y-3">
             {round.matchPairs.map((matchPair) => {
-              const score = scores[matchPair.id] ?? { homeScore: DEFAULT_SCORE, awayScore: DEFAULT_SCORE };
+              const score = scores[matchPair.id] ?? { homeScore: "", awayScore: "" };
               const isSaving = saving[matchPair.id] ?? false;
               const showOk = savedAt[matchPair.id] !== undefined;
               const saveError = saveErrors[matchPair.id];
@@ -290,7 +289,7 @@ export default function RoundPredictionPage() {
                         pattern="[0-9]*"
                         value={score.homeScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
-                        placeholder={DEFAULT_SCORE}
+                        placeholder="–"
                         disabled={!bettingWindow.isOpen}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                       />
@@ -303,7 +302,7 @@ export default function RoundPredictionPage() {
                         pattern="[0-9]*"
                         value={score.awayScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
-                        placeholder={DEFAULT_SCORE}
+                        placeholder="–"
                         disabled={!bettingWindow.isOpen}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                       />
@@ -319,7 +318,7 @@ export default function RoundPredictionPage() {
                         pattern="[0-9]*"
                         value={score.homeScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
-                        placeholder={DEFAULT_SCORE}
+                        placeholder="–"
                         disabled={!bettingWindow.isOpen}
                         className="w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                       />
@@ -332,7 +331,7 @@ export default function RoundPredictionPage() {
                         pattern="[0-9]*"
                         value={score.awayScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
-                        placeholder={DEFAULT_SCORE}
+                        placeholder="–"
                         disabled={!bettingWindow.isOpen}
                         className="w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                       />
