@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 function parseScoreInput(value: unknown): number | null {
   if (value === undefined || value === null || value === "") return null;
   const n = Number(value);
-  return isNaN(n) ? null : n;
+  return isNaN(n) || n < 0 ? null : n;
 }
 
 export async function PUT(

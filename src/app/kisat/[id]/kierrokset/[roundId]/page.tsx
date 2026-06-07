@@ -32,6 +32,10 @@ type ScoreField = "homeScore" | "awayScore";
 const MAX_SCORE_DIGITS = 2;
 const SCORE_INPUT_PATTERN = new RegExp(`^\\d{0,${MAX_SCORE_DIGITS}}$`);
 
+function scoreToString(score: number | null | undefined): string {
+  return score !== null && score !== undefined ? String(score) : "";
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fi-FI", {
     day: "2-digit",
@@ -76,8 +80,8 @@ export default function RoundPredictionPage() {
       for (const mp of roundData.matchPairs ?? []) {
         const pred = predictionsData.find((p) => p.matchPairId === mp.id);
         initial[mp.id] = {
-          homeScore: pred?.homeScore !== null && pred?.homeScore !== undefined ? String(pred.homeScore) : "",
-          awayScore: pred?.awayScore !== null && pred?.awayScore !== undefined ? String(pred.awayScore) : "",
+          homeScore: scoreToString(pred?.homeScore),
+          awayScore: scoreToString(pred?.awayScore),
         };
       }
       setScores(initial);
@@ -166,6 +170,11 @@ export default function RoundPredictionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Screen reader live region for save status announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {Object.entries(saving).some(([, v]) => v) && "Tallennetaan…"}
+        {Object.entries(saveErrors).map(([id, err]) => err && `Ottelu ${id}: ${err} `)}
+      </div>
       <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center gap-3 mb-1">
           <Link
@@ -242,7 +251,10 @@ export default function RoundPredictionPage() {
                     </div>
 
                     {/* Save status icon */}
-                    <div className="w-6 shrink-0 flex items-center justify-center" title={saveError}>
+                    <div
+                      className="w-6 shrink-0 flex items-center justify-center"
+                      aria-label={isSaving ? "Tallennetaan" : saveError ? saveError : showOk ? "Tallennettu" : undefined}
+                    >
                       {isSaving ? (
                         <svg
                           className="w-4 h-4 text-gray-300 animate-spin"
