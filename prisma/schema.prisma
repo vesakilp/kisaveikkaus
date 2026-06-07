@@ -39,15 +39,17 @@ model Round {
 }
 
 model MatchPair {
-  id          Int          @id @default(autoincrement())
-  homeTeam    String
-  awayTeam    String
-  matchDate   DateTime
-  roundId     Int
-  round       Round        @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  predictions Prediction[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id               Int          @id @default(autoincrement())
+  homeTeam         String
+  awayTeam         String
+  matchDate        DateTime
+  roundId          Int
+  round            Round        @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  predictions      Prediction[]
+  actualHomeScore  Int?
+  actualAwayScore  Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
 model Prediction {

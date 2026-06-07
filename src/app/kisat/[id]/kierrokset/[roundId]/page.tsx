@@ -4,12 +4,15 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { formatDateTimeInFinland } from "@/lib/timezone";
+import { calculatePoints } from "@/lib/points";
 
 interface MatchPair {
   id: number;
   homeTeam: string;
   awayTeam: string;
   matchDate: string;
+  actualHomeScore: number | null;
+  actualAwayScore: number | null;
 }
 
 interface Round {
@@ -273,6 +276,22 @@ export default function RoundPredictionPage() {
               const showOk = savedAt[matchPair.id] !== undefined;
               const saveError = saveErrors[matchPair.id];
 
+              const hasResult = matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null;
+              const predHome = score.homeScore === "" ? null : Number(score.homeScore);
+              const predAway = score.awayScore === "" ? null : Number(score.awayScore);
+              const pts = hasResult
+                ? calculatePoints(predHome, predAway, matchPair.actualHomeScore, matchPair.actualAwayScore)
+                : null;
+
+              const homeInputClass = (base: string) =>
+                pts?.homeGoals
+                  ? base + " bg-green-100 border-green-400"
+                  : base;
+              const awayInputClass = (base: string) =>
+                pts?.awayGoals
+                  ? base + " bg-green-100 border-green-400"
+                  : base;
+
               return (
                 <div key={matchPair.id} className="rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
@@ -280,6 +299,7 @@ export default function RoundPredictionPage() {
                     <StatusIcon isSaving={isSaving} saveError={saveError} showOk={showOk} />
                   </div>
 
+                  {/* Mobile layout */}
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:hidden">
                     <div className="space-y-2 rounded-xl bg-gray-50 p-3 text-center">
                       <p className="truncate text-sm font-medium text-gray-900">{matchPair.homeTeam}</p>
@@ -291,7 +311,7 @@ export default function RoundPredictionPage() {
                         onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
                         placeholder="–"
                         disabled={!bettingWindow.isOpen}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                        className={homeInputClass("w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                     </div>
                     <div className="space-y-2 rounded-xl bg-gray-50 p-3 text-center">
@@ -304,11 +324,12 @@ export default function RoundPredictionPage() {
                         onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
                         placeholder="–"
                         disabled={!bettingWindow.isOpen}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                        className={awayInputClass("w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                     </div>
                   </div>
 
+                  {/* Desktop layout */}
                   <div className="mt-3 hidden items-center gap-3 sm:flex">
                     <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                       <span className="truncate font-medium text-gray-900">{matchPair.homeTeam}</span>
@@ -320,7 +341,7 @@ export default function RoundPredictionPage() {
                         onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
                         placeholder="–"
                         disabled={!bettingWindow.isOpen}
-                        className="w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                        className={homeInputClass("w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                     </div>
                     <span className="shrink-0 font-bold text-gray-400">–</span>
@@ -333,11 +354,25 @@ export default function RoundPredictionPage() {
                         onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
                         placeholder="–"
                         disabled={!bettingWindow.isOpen}
-                        className="w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                        className={awayInputClass("w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                       <span className="truncate font-medium text-gray-900">{matchPair.awayTeam}</span>
                     </div>
                   </div>
+
+                  {/* Actual result + points */}
+                  {hasResult && (
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
+                      <span className="text-sm text-gray-500">
+                        Tulos: <span className="font-semibold text-gray-800">{matchPair.actualHomeScore}–{matchPair.actualAwayScore}</span>
+                      </span>
+                      {pts !== null && (
+                        <span className="rounded-full bg-blue-50 px-3 py-0.5 text-sm font-semibold text-blue-700">
+                          {pts.total} {pts.total === 1 ? "piste" : "pistettä"}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
