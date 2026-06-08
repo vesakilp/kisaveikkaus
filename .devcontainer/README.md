@@ -1,4 +1,4 @@
-# GitHub Codespaces Setup for Kisaveikkaus
+# GitHub Codespaces Setup for Veikkauskisa
 
 This repository is configured to work seamlessly with GitHub Codespaces, including the GitHub iOS app with agentic development tools.
 

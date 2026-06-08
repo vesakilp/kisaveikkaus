@@ -230,7 +230,7 @@ The GitHub iOS app with AI agents is particularly powerful because:
 **Example workflow:**
 ```
 1. Open GitHub app on iPhone/iPad
-2. Navigate to kisaveikkaus repository
+2. Navigate to veikkauskisa repository
 3. Tap "Open in Codespace"
 4. Tell AI agent: "Add a new feature to track player scores"
 5. AI agent:
@@ -248,7 +248,7 @@ The GitHub iOS app with AI agents is particularly powerful because:
 ### Local
 ```bash
 git clone REPO
-cd kisaveikkaus
+cd veikkauskisa
 cp .env.example .env
 # Edit .env
 npm install

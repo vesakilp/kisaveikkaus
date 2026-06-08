@@ -15,7 +15,7 @@ GitHub Secrets allow you to:
 ### Step 1: Get Your Database Credentials
 
 1. Go to [Prisma Console](https://console.prisma.io/)
-2. Select your project: **kisaveikkaus**
+2. Select your project: **veikkauskisa**
 3. Select your database: **Development**
 4. Click **"Connection Strings"** → **"New Connection String"**
 5. Copy both connection strings:

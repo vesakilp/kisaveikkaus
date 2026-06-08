@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Kisaveikkaus Setup Script
+# Veikkauskisa Setup Script
 # This script helps set up the project for local development
 
 set -e
 
-echo "🚀 Kisaveikkaus Setup"
+echo "🚀 Veikkauskisa Setup"
 echo "===================="
 echo ""
 

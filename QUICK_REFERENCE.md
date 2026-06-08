@@ -1,4 +1,4 @@
-# 🚀 Quick Reference - Kisaveikkaus
+# 🚀 Quick Reference - Veikkauskisa
 
 ## Environment Variable Setup
 
@@ -52,7 +52,7 @@ npm install              # Install dependencies (manual)
 ## File Structure
 
 ```
-kisaveikkaus/
+veikkauskisa/
 ├── .devcontainer/           # GitHub Codespaces config
 │   ├── devcontainer.json    # Codespace settings
 │   └── README.md            # Codespace guide
@@ -112,8 +112,8 @@ DELETE /api/competitions/[id]      # Delete competition
 ### Local Mac/PC
 ```bash
 # One-time setup
-git clone https://github.com/YOUR_USERNAME/kisaveikkaus.git
-cd kisaveikkaus
+git clone https://github.com/YOUR_USERNAME/veikkauskisa.git
+cd veikkauskisa
 cp .env.example .env
 # Edit .env with your credentials
 npm install
@@ -158,7 +158,7 @@ npm run dev
 ## Getting Credentials
 
 1. **Go to:** [console.prisma.io](https://console.prisma.io/)
-2. **Select:** kisaveikkaus project → Development database
+2. **Select:** veikkauskisa project → Development database
 3. **Create:** Connection Strings → New Connection String
 4. **Copy:**
    - Prisma Accelerate URL → `DATABASE_URL`
@@ -188,7 +188,7 @@ npm run dev
 
 ```bash
 # Quick start from scratch
-git clone REPO && cd kisaveikkaus && ./setup.sh
+git clone REPO && cd veikkauskisa && ./setup.sh
 
 # Reset everything
 rm -rf node_modules .next && npm install && npm run prisma:generate
@@ -203,7 +203,7 @@ npm run prisma:studio
 npx vercel --prod
 
 # Create Codespace from CLI
-gh codespace create --repo YOUR_USERNAME/kisaveikkaus
+gh codespace create --repo YOUR_USERNAME/veikkauskisa
 ```
 
 ---

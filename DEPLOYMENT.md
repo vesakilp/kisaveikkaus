@@ -1,4 +1,4 @@
-# Deployment Guide for Kisaveikkaus
+# Deployment Guide for Veikkauskisa
 
 This guide covers deployment to Vercel and development across multiple environments (local, GitHub Codespaces, iOS app).
 
@@ -24,7 +24,7 @@ This guide covers deployment to Vercel and development across multiple environme
 ### Getting Your Database Credentials
 
 1. Go to [Prisma Console](https://console.prisma.io/)
-2. Select your project: **kisaveikkaus**
+2. Select your project: **veikkauskisa**
 3. Select your database: **Development** (or create a production database)
 4. Create a connection string:
    - Click "Connection Strings"
@@ -41,8 +41,8 @@ This guide covers deployment to Vercel and development across multiple environme
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/kisaveikkaus.git
-   cd kisaveikkaus
+   git clone https://github.com/YOUR_USERNAME/veikkauskisa.git
+   cd veikkauskisa
    ```
 
 2. **Install dependencies:**
@@ -152,7 +152,7 @@ When using the GitHub iOS app with agentic development:
    - Go to [vercel.com](https://vercel.com)
    - Click **"New Project"**
    - Import your GitHub repository
-   - Select **kisaveikkaus**
+   - Select **veikkauskisa**
 
 ### Configure Environment Variables in Vercel
 

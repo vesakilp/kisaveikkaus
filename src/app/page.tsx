@@ -9,7 +9,7 @@ export default async function Home() {
     return (
       <main className="flex flex-1 items-center justify-center bg-white px-4 py-12 sm:px-6 sm:py-16">
         <div className="w-full max-w-xl text-center">
-          <h1 className="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl">Kisaveikkaus</h1>
+          <h1 className="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl">Veikkauskisa</h1>
           <p className="mx-auto mb-8 max-w-lg text-sm text-gray-500 sm:text-base">
             Hallinnoi kisoja, kierroksia ja ottelupareja. Kirjaudu sisään aloittaaksesi.
           </p>

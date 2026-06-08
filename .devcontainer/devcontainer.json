@@ -1,5 +1,5 @@
 {
-  "name": "Kisaveikkaus Development",
+  "name": "Veikkauskisa Development",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
   
   "features": {
