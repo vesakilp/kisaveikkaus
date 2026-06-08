@@ -1,6 +1,6 @@
 # Veikkauskisa
 
-Sovellus veikkauskisaten hallintaan (esim. jalkapallon MM-kisat).
+Sovellus veikkauskisojen hallintaan (esim. jalkapallon MM-kisat).
 
 ## ✨ Ominaisuudet
 
