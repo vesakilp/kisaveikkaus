@@ -114,11 +114,18 @@ export default function Navigation() {
                             <p className="text-xs text-gray-500">Kirjautunut:</p>
                             <p className="truncate text-sm font-medium text-gray-900">{user.email}</p>
                           </div>
-                          <button
-                            onClick={handleLogout}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
-                          >
-                            Kirjaudu ulos
+                           <Link
+                             href="/profiili"
+                             onClick={closeMenus}
+                             className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                           >
+                             Muokkaa näyttönimeä
+                           </Link>
+                           <button
+                             onClick={handleLogout}
+                             className="w-full px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                           >
+                             Kirjaudu ulos
                           </button>
                         </div>
                       </>
@@ -195,6 +202,13 @@ export default function Navigation() {
                       {link.label}
                     </Link>
                   ))}
+                  <Link
+                    href="/profiili"
+                    onClick={closeMenus}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+                  >
+                    Muokkaa näyttönimeä
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
