@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SESSION_UPDATED_EVENT } from "@/lib/auth/events";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -14,14 +15,27 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((response) => response.json())
+      .then(async (response) => {
+        if (response.status === 401) {
+          router.push("/login");
+          return null;
+        }
+
+        if (!response.ok) {
+          throw new Error("Session fetch failed");
+        }
+
+        return response.json();
+      })
       .then((data) => {
+        if (!data) return;
+
         if (!data.user) {
           router.push("/login");
           return;
         }
 
-        setDisplayName(data.user.displayName);
+        setDisplayName(data.user.displayName ?? "");
       })
       .catch(() => {
         setError("Käyttäjätietojen haku epäonnistui");
@@ -51,8 +65,9 @@ export default function ProfilePage() {
         return;
       }
 
-      setDisplayName(data.user.displayName);
+      setDisplayName(data.user.displayName ?? "");
       setSuccess("Näyttönimi päivitetty");
+      window.dispatchEvent(new Event(SESSION_UPDATED_EVENT));
       router.refresh();
     } catch {
       setError("Näyttönimen päivitys epäonnistui");

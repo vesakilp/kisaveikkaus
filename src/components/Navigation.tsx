@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { SESSION_UPDATED_EVENT } from "@/lib/auth/events";
 
 interface User {
   id: number;
@@ -18,6 +19,7 @@ export default function Navigation() {
   const [loading, setLoading] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [sessionVersion, setSessionVersion] = useState(0);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -28,7 +30,18 @@ export default function Navigation() {
       .then((data) => setUser(data.user))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-  }, [pathname]);
+  }, [pathname, sessionVersion]);
+
+  useEffect(() => {
+    const handleSessionUpdated = () => {
+      setSessionVersion((value) => value + 1);
+    };
+
+    window.addEventListener(SESSION_UPDATED_EVENT, handleSessionUpdated);
+    return () => {
+      window.removeEventListener(SESSION_UPDATED_EVENT, handleSessionUpdated);
+    };
+  }, []);
 
   const links = useMemo(() => {
     if (!user) return [];
