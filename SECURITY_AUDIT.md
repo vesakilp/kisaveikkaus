@@ -1,7 +1,7 @@
-# Tietoturva-audit - Kisaveikkaus
+# Tietoturva-audit - Veikkauskisa
 
 **Päivämäärä:** 2026-06-07  
-**Sovellus:** Kisaveikkaus (Next.js 16 + Prisma + PostgreSQL)  
+**Sovellus:** Veikkauskisa (Next.js 16 + Prisma + PostgreSQL)  
 **Auditointikohteet:** Autentikointi, valtuutus, tietokanta, API, frontend, riippuvuudet
 
 ---
@@ -462,5 +462,5 @@ Sovellus on hyvällä pohjalla, mutta vaatii muutamia kriittisiä korjauksia enn
 ---
 
 **Auditoinut:** GitHub Copilot CLI  
-**Versio:** Kisaveikkaus commit 3af7f64  
+**Versio:** Veikkauskisa commit 3af7f64  
 **Seuraava audit:** 3 kuukauden kuluttua tai merkittävien muutosten jälkeen

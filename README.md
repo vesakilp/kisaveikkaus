@@ -1,6 +1,6 @@
-# Kisaveikkaus
+# Veikkauskisa
 
-Sovellus kisaveikkausten hallintaan (esim. jalkapallon MM-kisat).
+Sovellus veikkauskisaten hallintaan (esim. jalkapallon MM-kisat).
 
 ## ✨ Ominaisuudet
 
@@ -44,7 +44,7 @@ Avaa [http://localhost:3000](http://localhost:3000).
 
 ### Vercel Deployment
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/kisaveikkaus)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/veikkauskisa)
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
@@ -159,7 +159,7 @@ SMTP_PORT="587"
 SMTP_SECURE="false"
 SMTP_USER="smtp-username"
 SMTP_PASS="smtp-password"
-MAIL_FROM="Kisaveikkaus <no-reply@example.com>"
+MAIL_FROM="Veikkauskisa <no-reply@example.com>"
 APP_URL="http://localhost:3000"
 ```
 

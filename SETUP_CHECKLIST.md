@@ -1,4 +1,4 @@
-# Setup Checklist for Kisaveikkaus
+# Setup Checklist for Veikkauskisa
 
 Use this checklist to ensure your project is properly configured across all environments.
 
@@ -11,7 +11,7 @@ Use this checklist to ensure your project is properly configured across all envi
 - [ ] Saved connection strings securely (password manager or secure notes)
 
 ### 2. Local Development
-- [ ] Cloned repository: `git clone https://github.com/YOUR_USERNAME/kisaveikkaus.git`
+- [ ] Cloned repository: `git clone https://github.com/YOUR_USERNAME/veikkauskisa.git`
 - [ ] Ran setup script: `./setup.sh` OR
   - [ ] Copied `.env.example` to `.env`
   - [ ] Added `DATABASE_URL` to `.env`

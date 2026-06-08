@@ -40,7 +40,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       `Jos et pyytänyt salasanan palautusta, voit jättää tämän viestin huomiotta.`,
     html:
       `<p>Pyysit salasanan palautusta.</p>` +
-      `<p><a href="${resetUrl}" aria-label="Aseta uusi salasana Kisaveikkaus-palveluun">Aseta uusi salasana Kisaveikkaus-palveluun</a></p>` +
+      `<p><a href="${resetUrl}" aria-label="Aseta uusi salasana Veikkauskisa-palveluun">Aseta uusi salasana Veikkauskisa-palveluun</a></p>` +
       `<p>Linkki vanhenee 1 tunnin kuluttua.</p>` +
       `<p>Jos et pyytänyt salasanan palautusta, voit jättää tämän viestin huomiotta.</p>`,
   });

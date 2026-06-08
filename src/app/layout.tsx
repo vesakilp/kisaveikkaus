@@ -3,7 +3,7 @@ import "./globals.css";
 import Navigation from "@/components/Navigation";
 
 export const metadata: Metadata = {
-  title: "Kisaveikkaus",
+  title: "Veikkauskisa",
   description: "Hallinnoi kisoja ja veikkauksia",
 };
 

@@ -65,7 +65,7 @@ export default function Navigation() {
           onClick={closeMenus}
           className="text-lg font-bold text-gray-900 transition-colors hover:text-gray-700 sm:text-xl"
         >
-          Kisaveikkaus
+          Veikkauskisa
         </Link>
 
         {loading ? (
