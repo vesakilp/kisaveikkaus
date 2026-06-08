@@ -59,8 +59,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       }
     }
 
-    // Prevent non-superadmin from modifying their own admin status
-    if (body.isAdmin !== undefined && userId === session.id) {
+    // Prevent changing your own admin status, but allow saving unchanged value
+    if (body.isAdmin !== undefined && userId === session.id && body.isAdmin !== session.isAdmin) {
       return NextResponse.json(
         { error: "Et voi muuttaa omaa admin-statustasi" },
         { status: 400 }
