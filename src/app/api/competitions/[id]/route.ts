@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -12,6 +13,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: "Ei oikeuksia" }, { status: 403 });
+  }
+
   const { id } = await params;
   const body = await request.json();
   const name = typeof body?.name === "string" ? body.name.trim() : undefined;
@@ -41,6 +48,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: "Ei oikeuksia" }, { status: 403 });
+  }
+
   const { id } = await params;
   await prisma.competition.delete({ where: { id: Number(id) } });
   return NextResponse.json({ success: true });
