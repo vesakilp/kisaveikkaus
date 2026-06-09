@@ -8,12 +8,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const [competition, users] = await Promise.all([
     prisma.competition.findUnique({
       where: { id: Number(id) },
-      include: {
+      select: {
+        id: true,
+        name: true,
         rounds: {
-          include: {
+          select: {
             matchPairs: {
-              include: {
-                predictions: true,
+              select: {
+                actualHomeScore: true,
+                actualAwayScore: true,
+                predictions: {
+                  select: {
+                    userId: true,
+                    homeScore: true,
+                    awayScore: true,
+                  },
+                },
               },
             },
           },
@@ -45,6 +55,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   for (const round of competition.rounds) {
     for (const matchPair of round.matchPairs) {
       for (const prediction of matchPair.predictions) {
+        if (!totals[prediction.userId]) {
+          continue;
+        }
         const { total } = calculatePoints(
           prediction.homeScore,
           prediction.awayScore,
