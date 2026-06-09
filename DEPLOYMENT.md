@@ -196,6 +196,7 @@ vercel --prod
 ### Vercel Cron for automatic results
 
 - Cron schedule is configured in `/vercel.json` to call `/api/cron/update-results` once per day (Hobby plan compatible).
+- Vercel cron expression is interpreted in UTC (`0 19 * * *`), which maps to 21:00 or 22:00 Finland time depending on daylight saving time.
 - Route validates that incoming cron requests include the configured `CRON_SECRET`.
 - Route executes updates per competition only within each competition's configured Finland date range and daily time (default 22:00).
 

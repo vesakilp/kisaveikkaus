@@ -82,19 +82,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Ei päivitettäviä kenttiä" }, { status: 400 });
   }
 
-  if (hasName && name === undefined) {
+  if (hasName && !name) {
     return NextResponse.json({ error: "Nimi on pakollinen" }, { status: 400 });
   }
 
-  if (name !== undefined && !name) {
-    return NextResponse.json({ error: "Nimi on pakollinen" }, { status: 400 });
-  }
-
-  if (hasOpenAiResultsPrompt && openAiResultsPrompt === undefined) {
-    return NextResponse.json({ error: "OpenAI prompt on pakollinen" }, { status: 400 });
-  }
-
-  if (openAiResultsPrompt !== undefined && !openAiResultsPrompt) {
+  if (hasOpenAiResultsPrompt && !openAiResultsPrompt) {
     return NextResponse.json({ error: "OpenAI prompt on pakollinen" }, { status: 400 });
   }
 
