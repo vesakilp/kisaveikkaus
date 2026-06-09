@@ -84,8 +84,15 @@ function PlayerPredictionsPanel({
   }, [competitionId, userId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      onClick={onClose}
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
+    >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${displayName} – veikkaukset`}
         className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white shadow-xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -243,7 +250,7 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <>
-            <p className="mb-3 text-xs text-gray-400">Paina pelaajan nimeä nähdäksesi hänen veikkauksensa päätetyistä otteluista.</p>
+            <p id="leaderboard-hint" className="mb-3 text-xs text-gray-400">Paina pelaajan nimeä nähdäksesi hänen veikkauksensa päätetyistä otteluista.</p>
             <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <table className="w-full text-sm">
                 <thead>
@@ -267,6 +274,7 @@ export default function LeaderboardPage() {
                         <td className="px-4 py-3">
                           <button
                             className="font-medium text-gray-900 underline-offset-2 hover:text-blue-600 hover:underline"
+                            aria-describedby="leaderboard-hint"
                             onClick={() => setSelectedPlayer({ userId: entry.userId, displayName: entry.displayName })}
                           >
                             {entry.displayName}
