@@ -69,7 +69,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }
   }
 
-  const leaderboard = Object.values(totals).sort((a, b) => b.points - a.points || a.displayName.localeCompare(b.displayName));
+  const leaderboard = Object.values(totals).sort(
+    (a, b) => b.points - a.points || a.displayName.localeCompare(b.displayName, "fi")
+  );
 
   return NextResponse.json({ competition: { id: competition.id, name: competition.name }, leaderboard });
 }
