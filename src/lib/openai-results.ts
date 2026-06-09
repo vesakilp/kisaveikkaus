@@ -23,7 +23,7 @@ interface RunSummary {
   skippedCompetitions: number;
 }
 
-function isWithinCronWindowFinland(now: Date) {
+function getCurrentHourInFinland(now: Date) {
   const hour = Number(
     new Intl.DateTimeFormat("en-GB", {
       timeZone: FINLAND_TIME_ZONE,
@@ -31,8 +31,39 @@ function isWithinCronWindowFinland(now: Date) {
       hourCycle: "h23",
     }).format(now)
   );
+  return Number.isFinite(hour) ? hour : 0;
+}
 
-  return hour >= 22 || hour < 9;
+function getCurrentDateInFinland(now: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: FINLAND_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+function isWithinHourWindow(hour: number, startHour: number, endHour: number) {
+  if (startHour === endHour) return true;
+  if (startHour < endHour) return hour >= startHour && hour < endHour;
+  return hour >= startHour || hour < endHour;
+}
+
+function isWithinScheduleWindowFinland(
+  now: Date,
+  schedule: {
+    startDate: string | null;
+    endDate: string | null;
+    startHour: number;
+    endHour: number;
+  }
+) {
+  const dateInFinland = getCurrentDateInFinland(now);
+  if (schedule.startDate && dateInFinland < schedule.startDate) return false;
+  if (schedule.endDate && dateInFinland > schedule.endDate) return false;
+
+  const hourInFinland = getCurrentHourInFinland(now);
+  return isWithinHourWindow(hourInFinland, schedule.startHour, schedule.endHour);
 }
 
 function safeParseJson(text: string) {
@@ -111,6 +142,10 @@ async function updateCompetitionResults(competition: {
   id: number;
   name: string;
   openAiResultsPrompt: string;
+  openAiScheduleStartDate: string | null;
+  openAiScheduleEndDate: string | null;
+  openAiScheduleStartHour: number;
+  openAiScheduleEndHour: number;
   rounds: { id: number; matchPairs: PendingMatch[] }[];
 }) {
   const pendingMatches = competition.rounds.flatMap((round) => round.matchPairs);
@@ -214,15 +249,6 @@ async function updateCompetitionResults(competition: {
 }
 
 export async function runOpenAiResultUpdate(now = new Date()): Promise<RunSummary & { skippedByTimeWindow?: boolean }> {
-  if (!isWithinCronWindowFinland(now)) {
-    return {
-      attemptedCompetitions: 0,
-      updatedMatches: 0,
-      skippedCompetitions: 0,
-      skippedByTimeWindow: true,
-    };
-  }
-
   const competitions = await prisma.competition.findMany({
     include: {
       rounds: {
@@ -245,6 +271,18 @@ export async function runOpenAiResultUpdate(now = new Date()): Promise<RunSummar
   let skippedCompetitions = 0;
 
   for (const competition of competitions) {
+    if (
+      !isWithinScheduleWindowFinland(now, {
+        startDate: competition.openAiScheduleStartDate,
+        endDate: competition.openAiScheduleEndDate,
+        startHour: competition.openAiScheduleStartHour,
+        endHour: competition.openAiScheduleEndHour,
+      })
+    ) {
+      skippedCompetitions += 1;
+      continue;
+    }
+
     const result = await updateCompetitionResults(competition);
     if (result.skipped) {
       skippedCompetitions += 1;
