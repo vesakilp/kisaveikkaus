@@ -197,7 +197,7 @@ vercel --prod
 
 - Cron schedule is configured in `/vercel.json` to call `/api/cron/update-results` every 5 minutes.
 - Route validates that incoming cron requests include the configured `CRON_SECRET`.
-- Route executes updates only during Finland time window 22:00–09:00.
+- Route executes updates per competition only within each competition's configured Finland date/time window (default hour window 22:00–09:00).
 
 ### Running Migrations on Vercel
 
