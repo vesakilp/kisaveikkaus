@@ -26,7 +26,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Kisaa ei löydy" }, { status: 404 });
   }
 
+  const allUsers = await prisma.user.findMany({
+    select: { id: true, displayName: true },
+  });
+
   const totals: Record<number, { userId: number; displayName: string; points: number }> = {};
+
+  for (const user of allUsers) {
+    totals[user.id] = { userId: user.id, displayName: user.displayName, points: 0 };
+  }
 
   for (const round of competition.rounds) {
     for (const matchPair of round.matchPairs) {
@@ -49,7 +57,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }
   }
 
-  const leaderboard = Object.values(totals).sort((a, b) => b.points - a.points);
+  const leaderboard = Object.values(totals).sort((a, b) => b.points - a.points || a.displayName.localeCompare(b.displayName));
 
   return NextResponse.json({ competition: { id: competition.id, name: competition.name }, leaderboard });
 }
