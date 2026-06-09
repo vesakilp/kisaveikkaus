@@ -13,13 +13,29 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name } = await request.json();
-  if (!name?.trim()) {
+  const body = await request.json();
+  const name = typeof body?.name === "string" ? body.name.trim() : undefined;
+  const openAiResultsPrompt =
+    typeof body?.openAiResultsPrompt === "string" ? body.openAiResultsPrompt.trim() : undefined;
+
+  if (name === undefined && openAiResultsPrompt === undefined) {
+    return NextResponse.json({ error: "Ei päivitettäviä kenttiä" }, { status: 400 });
+  }
+
+  if (name !== undefined && !name) {
     return NextResponse.json({ error: "Nimi on pakollinen" }, { status: 400 });
   }
+
+  if (openAiResultsPrompt !== undefined && !openAiResultsPrompt) {
+    return NextResponse.json({ error: "OpenAI prompt on pakollinen" }, { status: 400 });
+  }
+
   const competition = await prisma.competition.update({
     where: { id: Number(id) },
-    data: { name: name.trim() },
+    data: {
+      ...(name !== undefined ? { name } : {}),
+      ...(openAiResultsPrompt !== undefined ? { openAiResultsPrompt } : {}),
+    },
   });
   return NextResponse.json(competition);
 }

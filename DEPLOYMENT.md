@@ -165,6 +165,12 @@ When using the GitHub iOS app with agentic development:
    - **Key:** `DATABASE_URL`  
      **Value:** Your production Prisma Accelerate connection string  
      **Environment:** Production, Preview
+   - **Key:** `OPENAI_API_KEY`  
+     **Value:** OpenAI API key used for automatic result fetching  
+     **Environment:** Production, Preview
+   - **Key:** `CRON_SECRET`  
+     **Value:** Long random secret used to protect `/api/cron/update-results`  
+     **Environment:** Production, Preview
 
    **For Migrations (optional):**
    - **Key:** `DIRECT_URL`  
@@ -186,6 +192,12 @@ When using the GitHub iOS app with agentic development:
 ```bash
 vercel --prod
 ```
+
+### Vercel Cron for automatic results
+
+- Cron schedule is configured in `/vercel.json` to call `/api/cron/update-results` every 5 minutes.
+- Route validates that incoming cron requests include the configured `CRON_SECRET`.
+- Route executes updates only during Finland time window 22:00–09:00.
 
 ### Running Migrations on Vercel
 

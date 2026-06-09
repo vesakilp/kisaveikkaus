@@ -8,6 +8,7 @@ Sovellus veikkauskisojen hallintaan (esim. jalkapallon MM-kisat).
 - **Kisat (CRUD)** – luo, muokkaa ja poista kisoja
 - **Kierrokset (CRUD)** – jokaisella kierroksella nimi sekä veikkauksen alku- ja loppuaika
 - **Otteluparit (CRUD)** – syötä käsin tai tuo JSON-tiedostosta
+- **Automaattinen tulospäivitys** – Vercel Cron + OpenAI hakee päättyneiden otteluiden tuloksia
 - **Vahvistusdialogi** kaikissa muutoksissa (muutoksille vaaditaan hyväksyntä)
 - **JSON-tuonti** ohjeistus-popupilla
 - Valkoinen teema
@@ -149,6 +150,10 @@ DIRECT_URL="postgres://<username>:<password>@db.prisma.io:5432/postgres?sslmode=
 
 # JWT signing key (min. 32 chars)
 JWT_SECRET="your-super-secret-jwt-key-min-32-characters"
+
+# OpenAI-driven result automation
+OPENAI_API_KEY="sk-..."
+CRON_SECRET="long-random-secret"
 ```
 
 Optional SMTP settings for password reset emails:
@@ -167,6 +172,14 @@ APP_URL="http://localhost:3000"
 - **Local:** `.env` file (gitignored)
 - **Codespaces:** GitHub Secrets
 - **Vercel:** Environment Variables in dashboard
+
+### OpenAI tulosautomaation käyttö
+
+- Jokaisella kisalla on oma muokattava OpenAI prompt hallintapaneelin kisasivulla kohdassa **Asetukset**.
+- Oletusprompt: `Anna päättyneiden 2026 FIFA Men's World Cupin pelien tulokset`
+- Cron endpoint on `/api/cron/update-results` ja sitä kutsutaan Vercelissä 5 minuutin välein.
+- Endpoint käsittelee ajon vain Suomen aikaa välillä **22:00–09:00**.
+- OpenAI-kutsut lokitetaan kilpailukohtaisesti ja request/response näkyvät hallintapaneelissa kohdassa **OpenAI-lokit**.
 
 ## 🤝 Contributing
 
