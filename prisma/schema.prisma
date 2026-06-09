@@ -25,8 +25,7 @@ model Competition {
   openAiResultsPrompt  String          @default("Anna päättyneiden 2026 FIFA Men's World Cupin pelien tulokset")
   openAiScheduleStartDate String?
   openAiScheduleEndDate   String?
-  openAiScheduleStartHour Int          @default(22)
-  openAiScheduleEndHour   Int          @default(9)
+  openAiScheduleTime      String        @default("22:00")
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   rounds               Round[]

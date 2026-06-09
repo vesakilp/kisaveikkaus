@@ -23,30 +23,25 @@ interface RunSummary {
   skippedCompetitions: number;
 }
 
-function getCurrentHourInFinland(now: Date) {
-  const hour = Number(
-    new Intl.DateTimeFormat("en-GB", {
-      timeZone: FINLAND_TIME_ZONE,
-      hour: "2-digit",
-      hourCycle: "h23",
-    }).format(now)
-  );
-  return Number.isFinite(hour) ? hour : 0;
+function getCurrentClockInFinland(now: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: FINLAND_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
+  return `${hour}:${minute}`;
 }
 
 function getCurrentDateInFinland(now: Date) {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: FINLAND_TIME_ZONE,
+      timeZone: FINLAND_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(now);
-}
-
-function isWithinHourWindow(hour: number, startHour: number, endHour: number) {
-  if (startHour === endHour) return true;
-  if (startHour < endHour) return hour >= startHour && hour < endHour;
-  return hour >= startHour || hour < endHour;
 }
 
 function isWithinScheduleWindowFinland(
@@ -54,16 +49,14 @@ function isWithinScheduleWindowFinland(
   schedule: {
     startDate: string | null;
     endDate: string | null;
-    startHour: number;
-    endHour: number;
+    time: string;
   }
 ) {
   const dateInFinland = getCurrentDateInFinland(now);
   if (schedule.startDate && dateInFinland < schedule.startDate) return false;
   if (schedule.endDate && dateInFinland > schedule.endDate) return false;
 
-  const hourInFinland = getCurrentHourInFinland(now);
-  return isWithinHourWindow(hourInFinland, schedule.startHour, schedule.endHour);
+  return getCurrentClockInFinland(now) === schedule.time;
 }
 
 function safeParseJson(text: string) {
@@ -144,8 +137,7 @@ async function updateCompetitionResults(competition: {
   openAiResultsPrompt: string;
   openAiScheduleStartDate: string | null;
   openAiScheduleEndDate: string | null;
-  openAiScheduleStartHour: number;
-  openAiScheduleEndHour: number;
+  openAiScheduleTime: string;
   rounds: { id: number; matchPairs: PendingMatch[] }[];
 }) {
   const pendingMatches = competition.rounds.flatMap((round) => round.matchPairs);
@@ -275,8 +267,7 @@ export async function runOpenAiResultUpdate(now = new Date()): Promise<RunSummar
       !isWithinScheduleWindowFinland(now, {
         startDate: competition.openAiScheduleStartDate,
         endDate: competition.openAiScheduleEndDate,
-        startHour: competition.openAiScheduleStartHour,
-        endHour: competition.openAiScheduleEndHour,
+        time: competition.openAiScheduleTime,
       })
     ) {
       skippedCompetitions += 1;

@@ -23,10 +23,15 @@ function parseScheduleDateInput(value: unknown) {
   return trimmed;
 }
 
-function parseScheduleHourInput(value: unknown) {
-  if (typeof value !== "number" || !Number.isInteger(value)) return undefined;
-  if (value < 0 || value > 23) return undefined;
-  return value;
+function parseScheduleTimeInput(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return undefined;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return undefined;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -52,8 +57,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const hasOpenAiResultsPrompt = Object.prototype.hasOwnProperty.call(body ?? {}, "openAiResultsPrompt");
   const hasOpenAiScheduleStartDate = Object.prototype.hasOwnProperty.call(body ?? {}, "openAiScheduleStartDate");
   const hasOpenAiScheduleEndDate = Object.prototype.hasOwnProperty.call(body ?? {}, "openAiScheduleEndDate");
-  const hasOpenAiScheduleStartHour = Object.prototype.hasOwnProperty.call(body ?? {}, "openAiScheduleStartHour");
-  const hasOpenAiScheduleEndHour = Object.prototype.hasOwnProperty.call(body ?? {}, "openAiScheduleEndHour");
+  const hasOpenAiScheduleTime = Object.prototype.hasOwnProperty.call(body ?? {}, "openAiScheduleTime");
 
   const name = hasName && typeof body?.name === "string" ? body.name.trim() : undefined;
   const openAiResultsPrompt =
@@ -66,18 +70,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const openAiScheduleEndDate = hasOpenAiScheduleEndDate
     ? parseScheduleDateInput(body?.openAiScheduleEndDate)
     : undefined;
-  const openAiScheduleStartHour = hasOpenAiScheduleStartHour
-    ? parseScheduleHourInput(body?.openAiScheduleStartHour)
-    : undefined;
-  const openAiScheduleEndHour = hasOpenAiScheduleEndHour ? parseScheduleHourInput(body?.openAiScheduleEndHour) : undefined;
+  const openAiScheduleTime = hasOpenAiScheduleTime ? parseScheduleTimeInput(body?.openAiScheduleTime) : undefined;
 
   if (
     !hasName &&
     !hasOpenAiResultsPrompt &&
     !hasOpenAiScheduleStartDate &&
     !hasOpenAiScheduleEndDate &&
-    !hasOpenAiScheduleStartHour &&
-    !hasOpenAiScheduleEndHour
+    !hasOpenAiScheduleTime
   ) {
     return NextResponse.json({ error: "Ei päivitettäviä kenttiä" }, { status: 400 });
   }
@@ -106,12 +106,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Aikataulun lopetuspäivä on virheellinen" }, { status: 400 });
   }
 
-  if (hasOpenAiScheduleStartHour && openAiScheduleStartHour === undefined) {
-    return NextResponse.json({ error: "Aikataulun aloitustunnin tulee olla 0-23" }, { status: 400 });
-  }
-
-  if (hasOpenAiScheduleEndHour && openAiScheduleEndHour === undefined) {
-    return NextResponse.json({ error: "Aikataulun lopetustunnin tulee olla 0-23" }, { status: 400 });
+  if (hasOpenAiScheduleTime && openAiScheduleTime === undefined) {
+    return NextResponse.json({ error: "Aikataulun kellonajan tulee olla muodossa HH:MM" }, { status: 400 });
   }
 
   const existingCompetition = await prisma.competition.findUnique({
@@ -139,8 +135,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       ...(openAiResultsPrompt !== undefined ? { openAiResultsPrompt } : {}),
       ...(openAiScheduleStartDate !== undefined ? { openAiScheduleStartDate } : {}),
       ...(openAiScheduleEndDate !== undefined ? { openAiScheduleEndDate } : {}),
-      ...(openAiScheduleStartHour !== undefined ? { openAiScheduleStartHour } : {}),
-      ...(openAiScheduleEndHour !== undefined ? { openAiScheduleEndHour } : {}),
+      ...(openAiScheduleTime !== undefined ? { openAiScheduleTime } : {}),
     },
   });
   return NextResponse.json(competition);

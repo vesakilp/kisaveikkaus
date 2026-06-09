@@ -20,8 +20,7 @@ interface Competition {
   openAiResultsPrompt: string;
   openAiScheduleStartDate: string | null;
   openAiScheduleEndDate: string | null;
-  openAiScheduleStartHour: number;
-  openAiScheduleEndHour: number;
+  openAiScheduleTime: string;
   rounds: Round[];
 }
 
@@ -40,8 +39,7 @@ export default function CompetitionPage() {
   const [settingsPrompt, setSettingsPrompt] = useState("");
   const [settingsScheduleStartDate, setSettingsScheduleStartDate] = useState("");
   const [settingsScheduleEndDate, setSettingsScheduleEndDate] = useState("");
-  const [settingsScheduleStartHour, setSettingsScheduleStartHour] = useState(22);
-  const [settingsScheduleEndHour, setSettingsScheduleEndHour] = useState(9);
+  const [settingsScheduleTime, setSettingsScheduleTime] = useState("22:00");
   const [savingSettings, setSavingSettings] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editRoundId, setEditRoundId] = useState<number | null>(null);
@@ -58,8 +56,7 @@ export default function CompetitionPage() {
         setSettingsPrompt(data.openAiResultsPrompt ?? "");
         setSettingsScheduleStartDate(data.openAiScheduleStartDate ?? "");
         setSettingsScheduleEndDate(data.openAiScheduleEndDate ?? "");
-        setSettingsScheduleStartHour(data.openAiScheduleStartHour ?? 22);
-        setSettingsScheduleEndHour(data.openAiScheduleEndHour ?? 9);
+        setSettingsScheduleTime(data.openAiScheduleTime ?? "22:00");
       })
       .finally(() => setLoading(false));
   }, [id, refreshCount]);
@@ -116,8 +113,7 @@ export default function CompetitionPage() {
         openAiResultsPrompt: settingsPrompt,
         openAiScheduleStartDate: settingsScheduleStartDate || null,
         openAiScheduleEndDate: settingsScheduleEndDate || null,
-        openAiScheduleStartHour: settingsScheduleStartHour,
-        openAiScheduleEndHour: settingsScheduleEndHour,
+        openAiScheduleTime: settingsScheduleTime,
       }),
     });
     setSavingSettings(false);
@@ -213,28 +209,13 @@ export default function CompetitionPage() {
               />
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Kellonaika alkaa (0-23)</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Päivittäinen ajoaika</label>
               <input
-                type="number"
-                min={0}
-                max={23}
-                step={1}
-                value={settingsScheduleStartHour}
-                onChange={(e) => setSettingsScheduleStartHour(Number(e.target.value))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Kellonaika päättyy (0-23)</label>
-              <input
-                type="number"
-                min={0}
-                max={23}
-                step={1}
-                value={settingsScheduleEndHour}
-                onChange={(e) => setSettingsScheduleEndHour(Number(e.target.value))}
+                type="time"
+                value={settingsScheduleTime}
+                onChange={(e) => setSettingsScheduleTime(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
@@ -245,12 +226,7 @@ export default function CompetitionPage() {
               disabled={
                 savingSettings ||
                 !settingsPrompt.trim() ||
-                !Number.isInteger(settingsScheduleStartHour) ||
-                !Number.isInteger(settingsScheduleEndHour) ||
-                settingsScheduleStartHour < 0 ||
-                settingsScheduleStartHour > 23 ||
-                settingsScheduleEndHour < 0 ||
-                settingsScheduleEndHour > 23
+                !/^\d{2}:\d{2}$/.test(settingsScheduleTime)
               }
               className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
