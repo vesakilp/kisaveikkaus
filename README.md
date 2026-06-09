@@ -176,9 +176,10 @@ APP_URL="http://localhost:3000"
 ### OpenAI tulosautomaation käyttö
 
 - Jokaisella kisalla on oma muokattava OpenAI prompt hallintapaneelin kisasivulla kohdassa **Asetukset**.
+- Samassa näkymässä voi määrittää kisan OpenAI-ajastuksen päivämäärä- ja kellonaikavälin.
 - Oletusprompt: `Anna päättyneiden 2026 FIFA Men's World Cupin pelien tulokset`
 - Cron endpoint on `/api/cron/update-results` ja sitä kutsutaan Vercelissä 5 minuutin välein.
-- Endpoint käsittelee ajon vain Suomen aikaa välillä **22:00–09:00**.
+- Endpoint käsittelee kunkin kisan ajon vain sille määritellyn aikataulun sisällä (oletus **22:00–09:00**, ei päivämäärärajausta).
 - OpenAI-kutsut lokitetaan kilpailukohtaisesti ja request/response näkyvät hallintapaneelissa kohdassa **OpenAI-lokit**.
 
 ## 🤝 Contributing

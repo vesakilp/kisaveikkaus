@@ -106,7 +106,7 @@ export default function CompetitionPage() {
   };
 
   const handleSaveSettings = async () => {
-    const ok = await confirm("Tallenna asetukset", "Tallennetaanko OpenAI prompt?");
+    const ok = await confirm("Tallenna asetukset", "Tallennetaanko OpenAI-ajastus ja prompt?");
     if (!ok) return;
     setSavingSettings(true);
     await fetch(`/api/competitions/${id}`, {
