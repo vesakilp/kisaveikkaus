@@ -23,7 +23,7 @@ interface RunSummary {
   skippedCompetitions: number;
 }
 
-function getCurrentClockInFinland(now: Date) {
+function getFinlandTimeString(now: Date) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: FINLAND_TIME_ZONE,
     hour: "2-digit",
@@ -56,7 +56,7 @@ function isWithinScheduleWindowFinland(
   if (schedule.startDate && dateInFinland < schedule.startDate) return false;
   if (schedule.endDate && dateInFinland > schedule.endDate) return false;
 
-  return getCurrentClockInFinland(now) === schedule.time;
+  return getFinlandTimeString(now) === schedule.time;
 }
 
 function safeParseJson(text: string) {
