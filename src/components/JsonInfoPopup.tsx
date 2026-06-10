@@ -36,7 +36,7 @@ export function JsonInfoPopup({ isOpen, onClose }: JsonInfoPopupProps) {
         <ul className="mb-4 list-inside list-disc space-y-1 text-sm text-gray-700">
           <li><span className="rounded bg-gray-100 px-1 font-mono">homeTeam</span> – Kotijoukkueen nimi (teksti)</li>
           <li><span className="rounded bg-gray-100 px-1 font-mono">awayTeam</span> – Vierasjoukkueen nimi (teksti)</li>
-          <li><span className="rounded bg-gray-100 px-1 font-mono">matchDate</span> – Ottelun päivämäärä ISO 8601 -muodossa</li>
+          <li><span className="rounded bg-gray-100 px-1 font-mono">matchDate</span> – Ottelun alkamisaika ISO 8601 -muodossa (ilman aikavyöhykettä annettu aika tulkitaan Suomen ajassa)</li>
         </ul>
         <p className="mb-2 text-sm font-medium text-gray-700">Esimerkki:</p>
         <pre className="overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800">

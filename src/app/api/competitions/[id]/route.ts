@@ -38,7 +38,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const competition = await prisma.competition.findUnique({
     where: { id: Number(id) },
-    include: { rounds: { orderBy: { createdAt: "asc" }, include: { _count: { select: { matchPairs: true } } } } },
+    include: {
+      rounds: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          _count: { select: { matchPairs: true } },
+          matchPairs: { select: { matchDate: true } },
+        },
+      },
+    },
   });
   if (!competition) return NextResponse.json({ error: "Ei löydy" }, { status: 404 });
   return NextResponse.json(competition);
