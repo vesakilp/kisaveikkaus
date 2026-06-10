@@ -24,7 +24,7 @@ export default function CompetitionPage() {
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [currentTime] = useState(() => Date.now());
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   useEffect(() => {
     fetch(`/api/competitions/${competitionId}`)
@@ -36,6 +36,11 @@ export default function CompetitionPage() {
       .catch(() => setError("Kisaa ei voitu ladata. Yritä päivittää sivu."))
       .finally(() => setLoading(false));
   }, [competitionId]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => setCurrentTime(Date.now()), 30_000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const activeRounds =
     competition?.rounds.filter((round) => round.matchPairs.some((matchPair) => new Date(matchPair.matchDate).getTime() > currentTime)) || [];
