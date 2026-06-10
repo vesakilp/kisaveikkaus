@@ -16,6 +16,10 @@ interface Round {
 interface Competition {
   id: number;
   name: string;
+  openAiResultsPrompt: string;
+  openAiScheduleStartDate: string | null;
+  openAiScheduleEndDate: string | null;
+  openAiScheduleTime: string;
   rounds: Round[];
 }
 
@@ -31,6 +35,11 @@ export default function CompetitionPage() {
   const [nameInput, setNameInput] = useState("");
   const [showRoundForm, setShowRoundForm] = useState(false);
   const [roundForm, setRoundForm] = useState(emptyRound);
+  const [settingsPrompt, setSettingsPrompt] = useState("");
+  const [settingsScheduleStartDate, setSettingsScheduleStartDate] = useState("");
+  const [settingsScheduleEndDate, setSettingsScheduleEndDate] = useState("");
+  const [settingsScheduleTime, setSettingsScheduleTime] = useState("22:00");
+  const [savingSettings, setSavingSettings] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editRoundId, setEditRoundId] = useState<number | null>(null);
   const [editRound, setEditRound] = useState(emptyRound);
@@ -41,7 +50,13 @@ export default function CompetitionPage() {
   useEffect(() => {
     fetch(`/api/competitions/${id}`)
       .then((r) => r.json())
-      .then((data) => setCompetition(data))
+      .then((data) => {
+        setCompetition(data);
+        setSettingsPrompt(data.openAiResultsPrompt ?? "");
+        setSettingsScheduleStartDate(data.openAiScheduleStartDate ?? "");
+        setSettingsScheduleEndDate(data.openAiScheduleEndDate ?? "");
+        setSettingsScheduleTime(data.openAiScheduleTime ?? "22:00");
+      })
       .finally(() => setLoading(false));
   }, [id, refreshCount]);
 
@@ -83,6 +98,24 @@ export default function CompetitionPage() {
       body: JSON.stringify(editRound),
     });
     setEditRoundId(null);
+    refresh();
+  };
+
+  const handleSaveSettings = async () => {
+    const ok = await confirm("Tallenna asetukset", "Tallennetaanko OpenAI-ajastus ja prompt?");
+    if (!ok) return;
+    setSavingSettings(true);
+    await fetch(`/api/competitions/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        openAiResultsPrompt: settingsPrompt,
+        openAiScheduleStartDate: settingsScheduleStartDate || null,
+        openAiScheduleEndDate: settingsScheduleEndDate || null,
+        openAiScheduleTime: settingsScheduleTime,
+      }),
+    });
+    setSavingSettings(false);
     refresh();
   };
 
@@ -138,6 +171,69 @@ export default function CompetitionPage() {
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+        <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Asetukset</h2>
+            <Link
+              href={`/admin/competitions/${id}/openai-logs`}
+              className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50"
+            >
+              OpenAI-lokit
+            </Link>
+          </div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">OpenAI prompt tulosten hakuun</label>
+          <textarea
+            value={settingsPrompt}
+            onChange={(e) => setSettingsPrompt(e.target.value)}
+            rows={4}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          />
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Aikataulun aloituspäivä</label>
+              <input
+                type="date"
+                value={settingsScheduleStartDate}
+                onChange={(e) => setSettingsScheduleStartDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Aikataulun lopetuspäivä</label>
+              <input
+                type="date"
+                value={settingsScheduleEndDate}
+                onChange={(e) => setSettingsScheduleEndDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Päivittäinen ajoaika</label>
+              <input
+                type="time"
+                value={settingsScheduleTime}
+                onChange={(e) => setSettingsScheduleTime(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+          </div>
+          <div className="mt-3">
+            <button
+              onClick={handleSaveSettings}
+              disabled={
+                savingSettings ||
+                !settingsPrompt.trim() ||
+                !/^\d{2}:\d{2}$/.test(settingsScheduleTime)
+              }
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {savingSettings ? "Tallennetaan…" : "Tallenna asetukset"}
+            </button>
+          </div>
+        </section>
+
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Kierrokset</h2>
           <button

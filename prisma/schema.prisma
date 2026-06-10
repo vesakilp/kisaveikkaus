@@ -20,11 +20,16 @@ model User {
 }
 
 model Competition {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  rounds    Round[]
+  id                   Int             @id @default(autoincrement())
+  name                 String
+  openAiResultsPrompt  String          @default("Anna päättyneiden 2026 FIFA Men's World Cupin pelien tulokset")
+  openAiScheduleStartDate String?
+  openAiScheduleEndDate   String?
+  openAiScheduleTime      String        @default("22:00")
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  rounds               Round[]
+  openAiResultCallLogs OpenAiCallLog[]
 }
 
 model Round {
@@ -79,4 +84,18 @@ model PasswordResetToken {
   @@index([userId])
   @@index([expiresAt])
   @@index([userId, usedAt, expiresAt])
+}
+
+model OpenAiCallLog {
+  id             Int         @id @default(autoincrement())
+  competitionId  Int
+  competition    Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  status         String
+  requestPayload Json
+  responsePayload Json?
+  errorMessage   String?
+  updatedMatches Int         @default(0)
+  createdAt      DateTime    @default(now())
+
+  @@index([competitionId, createdAt(sort: Desc)])
 }

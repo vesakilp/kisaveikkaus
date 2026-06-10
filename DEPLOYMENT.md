@@ -165,6 +165,12 @@ When using the GitHub iOS app with agentic development:
    - **Key:** `DATABASE_URL`  
      **Value:** Your production Prisma Accelerate connection string  
      **Environment:** Production, Preview
+   - **Key:** `OPENAI_API_KEY`  
+     **Value:** OpenAI API key used for automatic result fetching  
+     **Environment:** Production, Preview
+   - **Key:** `CRON_SECRET`  
+     **Value:** Long random secret used to protect `/api/cron/update-results`  
+     **Environment:** Production, Preview
 
    **For Migrations (optional):**
    - **Key:** `DIRECT_URL`  
@@ -186,6 +192,14 @@ When using the GitHub iOS app with agentic development:
 ```bash
 vercel --prod
 ```
+
+### Vercel Cron for automatic results
+
+- Cron schedule is configured in `/vercel.json` to call `/api/cron/update-results` once per day (Hobby plan compatible).
+- Vercel cron expression is interpreted in UTC (`0 19 * * *`), which maps to 21:00 or 22:00 Finland time depending on daylight saving time.
+- Competition default schedule time is `22:00`; when DST ends, update competition schedule time to `21:00` if you want execution to stay aligned with the same UTC cron.
+- Route validates that incoming cron requests include the configured `CRON_SECRET`.
+- Route executes updates per competition only within each competition's configured Finland date range and daily time (default 22:00).
 
 ### Running Migrations on Vercel
 
