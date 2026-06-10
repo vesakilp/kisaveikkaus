@@ -39,8 +39,10 @@ const emptyMatch = { homeTeam: "", awayTeam: "", matchDate: "" };
 
 export default function RoundPage() {
   const params = useParams();
-  const roundId = params.roundId as string;
-  const competitionId = params.id as string;
+  const roundIdParam = params.roundId;
+  const competitionIdParam = params.id;
+  const roundId = Array.isArray(roundIdParam) ? roundIdParam[0] : roundIdParam;
+  const competitionId = Array.isArray(competitionIdParam) ? competitionIdParam[0] : competitionIdParam;
 
   const [round, setRound] = useState<Round | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,9 +64,17 @@ export default function RoundPage() {
   const [savingResult, setSavingResult] = useState(false);
 
   useEffect(() => {
+    if (!roundId) {
+      setRound(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     fetch(`/api/rounds/${roundId}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => setRound(data))
+      .catch(() => setRound(null))
       .finally(() => setLoading(false));
   }, [roundId, refreshCount]);
 
