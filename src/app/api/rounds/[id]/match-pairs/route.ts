@@ -16,8 +16,8 @@ type NormalizedMatchPairInput = {
 };
 
 function buildMatchKey(item: { externalMatchId: string | null; homeTeam: string; awayTeam: string }) {
-  if (item.externalMatchId) return `external:${item.externalMatchId}`;
-  return `teams:${item.homeTeam.toLowerCase()}::${item.awayTeam.toLowerCase()}`;
+  if (item.externalMatchId) return JSON.stringify(["external", item.externalMatchId]);
+  return JSON.stringify(["teams", item.homeTeam.toLowerCase(), item.awayTeam.toLowerCase()]);
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -109,14 +109,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
         const existingByKey = new Map<string, (typeof existing)[number]>();
         for (const match of existing) {
-          existingByKey.set(
-            buildMatchKey({
-              externalMatchId: match.externalMatchId,
-              homeTeam: match.homeTeam,
-              awayTeam: match.awayTeam,
-            }),
-            match
-          );
+          const externalKey = match.externalMatchId
+            ? buildMatchKey({
+                externalMatchId: match.externalMatchId,
+                homeTeam: match.homeTeam,
+                awayTeam: match.awayTeam,
+              })
+            : null;
+          const teamKey = buildMatchKey({
+            externalMatchId: null,
+            homeTeam: match.homeTeam,
+            awayTeam: match.awayTeam,
+          });
+
+          if (externalKey) existingByKey.set(externalKey, match);
+          existingByKey.set(teamKey, match);
         }
 
         let created = 0;
@@ -142,9 +149,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           }
 
           const shouldUpdate =
-            match.externalMatchId !== item.externalMatchId ||
-            match.homeTeam !== item.homeTeam ||
-            match.awayTeam !== item.awayTeam ||
             match.matchDate.getTime() !== item.matchDate.getTime();
 
           if (!shouldUpdate) {
@@ -155,9 +159,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           await tx.matchPair.update({
             where: { id: match.id },
             data: {
-              externalMatchId: item.externalMatchId,
-              homeTeam: item.homeTeam,
-              awayTeam: item.awayTeam,
               matchDate: item.matchDate,
             },
           });
