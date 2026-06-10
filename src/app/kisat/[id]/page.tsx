@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
 interface Round {
@@ -42,10 +42,27 @@ export default function CompetitionPage() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const activeRounds =
-    competition?.rounds.filter((round) => round.matchPairs.some((matchPair) => new Date(matchPair.matchDate).getTime() > currentTime)) || [];
-  const pastRounds =
-    competition?.rounds.filter((round) => !round.matchPairs.some((matchPair) => new Date(matchPair.matchDate).getTime() > currentTime)) || [];
+  const { activeRounds, pastRounds } = useMemo(() => {
+    if (!competition) return { activeRounds: [] as Round[], pastRounds: [] as Round[] };
+
+    const active: Round[] = [];
+    const past: Round[] = [];
+
+    for (const round of competition.rounds) {
+      const hasOpenMatches = round.matchPairs.some((matchPair) => {
+        const matchStart = Date.parse(matchPair.matchDate);
+        return Number.isFinite(matchStart) && matchStart > currentTime;
+      });
+
+      if (hasOpenMatches) {
+        active.push(round);
+      } else {
+        past.push(round);
+      }
+    }
+
+    return { activeRounds: active, pastRounds: past };
+  }, [competition, currentTime]);
 
   return (
     <div className="min-h-screen bg-gray-50">

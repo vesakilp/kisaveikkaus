@@ -236,7 +236,7 @@ export default function RoundPredictionPage() {
               const showOk = savedAt[matchPair.id] !== undefined;
               const saveError = saveErrors[matchPair.id];
               const matchStart = matchStartById.get(matchPair.id);
-              const isMatchOpen = Number.isFinite(matchStart) && currentTime < matchStart;
+              const isMatchOpen = matchStart !== undefined && Number.isFinite(matchStart) && currentTime < matchStart;
 
               const hasResult = matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null;
               const predHome = score.homeScore === "" ? null : Number(score.homeScore);
