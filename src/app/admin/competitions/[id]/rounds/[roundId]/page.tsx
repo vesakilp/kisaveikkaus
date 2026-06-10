@@ -182,14 +182,16 @@ export default function RoundPage() {
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-900">Otteluparit</h2>
             <button
+              type="button"
               onClick={toggleHideFinished}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+              aria-pressed={hideFinished}
+              className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
                 hideFinished
-                  ? "border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                  : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                  ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700"
+                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
-              {hideFinished ? "👁 Näytä tulokset" : "🙈 Piilota tulokset"}
+              Piilota pelatut
             </button>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
