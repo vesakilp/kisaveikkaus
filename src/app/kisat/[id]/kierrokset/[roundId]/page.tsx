@@ -18,8 +18,6 @@ interface MatchPair {
 interface Round {
   id: number;
   name: string;
-  bettingStart: string;
-  bettingEnd: string;
   matchPairs: MatchPair[];
   competition: { id: number; name: string };
 }
@@ -34,19 +32,10 @@ type ScoreField = "homeScore" | "awayScore";
 
 const MAX_SCORE_DIGITS = 2;
 const SCORE_INPUT_PATTERN = new RegExp(`^\\d{0,${MAX_SCORE_DIGITS}}$`);
-const MAX_TIMER_DELAY_MS = 60_000;
-const BETTING_WINDOW_TICK_BUFFER_MS = 100;
+const MATCH_STATUS_TICK_MS = 30_000;
 
 function scoreToString(score: number | null | undefined): string {
   return score !== null && score !== undefined ? String(score) : "";
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("fi-FI", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 }
 
 function StatusIcon({ isSaving, saveError, showOk }: { isSaving: boolean; saveError?: string; showOk: boolean }) {
@@ -124,40 +113,20 @@ export default function RoundPredictionPage() {
     };
   }, []);
 
-  const bettingWindow = useMemo(() => {
-    if (!round) return { start: NaN, end: NaN, isOpen: false };
-    const start = new Date(round.bettingStart).getTime();
-    const end = new Date(round.bettingEnd).getTime();
-    return { start, end, isOpen: currentTime >= start && currentTime <= end };
-  }, [round, currentTime]);
+  const matchStartById = useMemo(() => {
+    if (!round) return new Map<number, number>();
+    const startTimes = new Map<number, number>();
+    for (const matchPair of round.matchPairs) {
+      const matchStart = new Date(matchPair.matchDate).getTime();
+      if (Number.isFinite(matchStart)) startTimes.set(matchPair.id, matchStart);
+    }
+    return startTimes;
+  }, [round]);
 
   useEffect(() => {
-    if (!round) return;
-
-    const now = Date.now();
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const tick = () => setCurrentTime(Date.now());
-    const start = new Date(round.bettingStart).getTime();
-    const end = new Date(round.bettingEnd).getTime();
-
-    if (now < start) timers.push(setTimeout(tick, start - now + BETTING_WINDOW_TICK_BUFFER_MS));
-    if (now < end) timers.push(setTimeout(tick, end - now + BETTING_WINDOW_TICK_BUFFER_MS));
-
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (now < end) {
-      const intervalId = setInterval(() => {
-        const nextNow = Date.now();
-        setCurrentTime(nextNow);
-        if (nextNow > end) clearInterval(intervalId);
-      }, MAX_TIMER_DELAY_MS);
-      interval = intervalId;
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-      for (const timer of timers) clearTimeout(timer);
-    };
-  }, [round]);
+    const intervalId = setInterval(() => setCurrentTime(Date.now()), MATCH_STATUS_TICK_MS);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const savePrediction = useCallback(async (matchPairId: number, homeScore: string, awayScore: string) => {
     setSaving((prev) => ({ ...prev, [matchPairId]: true }));
@@ -198,7 +167,9 @@ export default function RoundPredictionPage() {
   }, []);
 
   const handleScoreChange = useCallback((matchPairId: number, field: ScoreField, value: string) => {
-    if (!round || !bettingWindow.isOpen) return;
+    if (!round) return;
+    const matchStart = matchStartById.get(matchPairId);
+    if (!matchStart || Date.now() >= matchStart) return;
     if (value !== "" && !SCORE_INPUT_PATTERN.test(value)) return;
 
     setScores((prev) => {
@@ -212,7 +183,7 @@ export default function RoundPredictionPage() {
 
       return { ...prev, [matchPairId]: updated };
     });
-  }, [bettingWindow.isOpen, round, savePrediction]);
+  }, [matchStartById, round, savePrediction]);
 
   if (loading) {
     return (
@@ -247,7 +218,7 @@ export default function RoundPredictionPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{round.name}</h1>
             <p className="mt-0.5 text-sm text-gray-500">
-              Veikkaus päättyy: {formatDateTimeInFinland(round.bettingEnd)}
+              Veikkaus on avoinna ottelukohtaisesti ottelun alkuun asti Suomen ajan mukaan.
             </p>
           </div>
         </div>
@@ -257,12 +228,6 @@ export default function RoundPredictionPage() {
         <p className="mb-4 text-sm text-gray-500">
           Anna otteluiden tulokset. Tulokset tallentuvat automaattisesti.
         </p>
-
-        {!bettingWindow.isOpen && (
-          <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            Veikkausaika ei ole käynnissä. Veikkauksia ei voi muokata tällä hetkellä.
-          </div>
-        )}
 
         {round.matchPairs.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
@@ -275,6 +240,8 @@ export default function RoundPredictionPage() {
               const isSaving = saving[matchPair.id] ?? false;
               const showOk = savedAt[matchPair.id] !== undefined;
               const saveError = saveErrors[matchPair.id];
+              const matchStart = matchStartById.get(matchPair.id);
+              const isMatchOpen = matchStart !== undefined && currentTime < matchStart;
 
               const hasResult = matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null;
               const predHome = score.homeScore === "" ? null : Number(score.homeScore);
@@ -295,7 +262,7 @@ export default function RoundPredictionPage() {
               return (
                 <div key={matchPair.id} className="rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-gray-400">{formatDate(matchPair.matchDate)}</span>
+                    <span className="text-xs text-gray-400">{formatDateTimeInFinland(matchPair.matchDate)}</span>
                     <StatusIcon isSaving={isSaving} saveError={saveError} showOk={showOk} />
                   </div>
 
@@ -310,7 +277,7 @@ export default function RoundPredictionPage() {
                         value={score.homeScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
                         placeholder="–"
-                        disabled={!bettingWindow.isOpen}
+                        disabled={!isMatchOpen}
                         className={homeInputClass("w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                     </div>
@@ -323,7 +290,7 @@ export default function RoundPredictionPage() {
                         value={score.awayScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
                         placeholder="–"
-                        disabled={!bettingWindow.isOpen}
+                        disabled={!isMatchOpen}
                         className={awayInputClass("w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                     </div>
@@ -340,7 +307,7 @@ export default function RoundPredictionPage() {
                         value={score.homeScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "homeScore", e.target.value)}
                         placeholder="–"
-                        disabled={!bettingWindow.isOpen}
+                        disabled={!isMatchOpen}
                         className={homeInputClass("w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                     </div>
@@ -353,7 +320,7 @@ export default function RoundPredictionPage() {
                         value={score.awayScore}
                         onChange={(e) => handleScoreChange(matchPair.id, "awayScore", e.target.value)}
                         placeholder="–"
-                        disabled={!bettingWindow.isOpen}
+                        disabled={!isMatchOpen}
                         className={awayInputClass("w-12 rounded-lg border border-gray-300 px-1 py-1.5 text-center text-sm font-semibold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400")}
                       />
                       <span className="truncate font-medium text-gray-900">{matchPair.awayTeam}</span>

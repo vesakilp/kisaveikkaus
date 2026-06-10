@@ -20,7 +20,6 @@ interface Round {
   id: number;
   name: string;
   bettingStart: string;
-  bettingEnd: string;
   matchPairs: MatchPair[];
   competition: { id: number; name: string };
 }
@@ -158,7 +157,7 @@ export default function RoundPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{round.name}</h1>
             <p className="mt-0.5 text-sm text-gray-500">
-              Veikkaus: {formatDateTimeInFinland(round.bettingStart)} – {formatDateTimeInFinland(round.bettingEnd)}
+              Veikkaus alkaa: {formatDateTimeInFinland(round.bettingStart)}. Veikkaus päättyy ottelukohtaisesti ottelun alkuun.
             </p>
           </div>
         </div>

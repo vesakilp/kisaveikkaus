@@ -37,7 +37,7 @@ export default async function Home() {
       rounds: {
         orderBy: { bettingStart: "asc" },
         where: {
-          bettingEnd: { gte: new Date() },
+          matchPairs: { some: { matchDate: { gt: new Date() } } },
         },
         include: {
           _count: { select: { matchPairs: true } },

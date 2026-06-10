@@ -10,7 +10,6 @@ interface Round {
   id: number;
   name: string;
   bettingStart: string;
-  bettingEnd: string;
   _count: { matchPairs: number };
 }
 
@@ -20,7 +19,7 @@ interface Competition {
   rounds: Round[];
 }
 
-const emptyRound = { name: "", bettingStart: "", bettingEnd: "" };
+const emptyRound = { name: "", bettingStart: "" };
 
 export default function CompetitionPage() {
   const params = useParams();
@@ -165,27 +164,15 @@ export default function CompetitionPage() {
                   required
                 />
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Veikkaus alkaa</label>
-                  <input
-                    type="datetime-local"
-                    value={roundForm.bettingStart}
-                    onChange={(e) => setRoundForm({ ...roundForm, bettingStart: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Veikkaus päättyy</label>
-                  <input
-                    type="datetime-local"
-                    value={roundForm.bettingEnd}
-                    onChange={(e) => setRoundForm({ ...roundForm, bettingEnd: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                    required
-                  />
-                </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Veikkaus alkaa</label>
+                <input
+                  type="datetime-local"
+                  value={roundForm.bettingStart}
+                  onChange={(e) => setRoundForm({ ...roundForm, bettingStart: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:w-auto"
+                  required
+                />
               </div>
             </div>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -216,14 +203,10 @@ export default function CompetitionPage() {
                       onChange={(e) => setEditRound({ ...editRound, name: e.target.value })}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                     />
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
                       <div>
                         <label className="mb-1 block text-xs text-gray-500">Veikkaus alkaa</label>
                         <input type="datetime-local" value={editRound.bettingStart} onChange={(e) => setEditRound({ ...editRound, bettingStart: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-gray-500">Veikkaus päättyy</label>
-                        <input type="datetime-local" value={editRound.bettingEnd} onChange={(e) => setEditRound({ ...editRound, bettingEnd: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
@@ -236,7 +219,7 @@ export default function CompetitionPage() {
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900">{round.name}</h3>
                       <p className="mt-0.5 text-xs text-gray-500">
-                        Veikkaus: {formatDateTimeInFinland(round.bettingStart)} – {formatDateTimeInFinland(round.bettingEnd)}
+                        Veikkaus alkaa: {formatDateTimeInFinland(round.bettingStart)}
                       </p>
                       <p className="mt-0.5 text-xs text-gray-400">{round._count.matchPairs} otteluparia</p>
                     </div>
@@ -244,7 +227,7 @@ export default function CompetitionPage() {
                       <Link href={`/admin/competitions/${id}/rounds/${round.id}`} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:w-auto">
                         Avaa
                       </Link>
-                      <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, bettingStart: toDatetimeLocalInFinland(round.bettingStart), bettingEnd: toDatetimeLocalInFinland(round.bettingEnd) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
+                      <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, bettingStart: toDatetimeLocalInFinland(round.bettingStart) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
                         Muokkaa
                       </button>
                       <button onClick={() => handleDeleteRound(round.id, round.name)} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 sm:w-auto">
