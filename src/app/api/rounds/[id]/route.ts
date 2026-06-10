@@ -14,16 +14,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name, bettingStart, bettingEnd } = await request.json();
+  const { name, bettingStart } = await request.json();
   const parsedBettingStart = parseDateTimeInput(bettingStart);
-  const parsedBettingEnd = parseDateTimeInput(bettingEnd);
 
-  if (!name?.trim() || !parsedBettingStart || !parsedBettingEnd) {
-    return NextResponse.json({ error: "Kaikki kentät ovat pakollisia" }, { status: 400 });
+  if (!name?.trim() || !parsedBettingStart) {
+    return NextResponse.json({ error: "Kierroksen nimi ja veikkauksen alkamisaika ovat pakollisia" }, { status: 400 });
   }
   const round = await prisma.round.update({
     where: { id: Number(id) },
-    data: { name: name.trim(), bettingStart: parsedBettingStart, bettingEnd: parsedBettingEnd },
+    data: { name: name.trim(), bettingStart: parsedBettingStart, bettingEnd: parsedBettingStart },
   });
   return NextResponse.json(round);
 }
