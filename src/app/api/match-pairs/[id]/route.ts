@@ -1,15 +1,17 @@
 import { prisma } from "@/lib/prisma";
+import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { homeTeam, awayTeam, matchDate } = await request.json();
-  if (!homeTeam?.trim() || !awayTeam?.trim() || !matchDate) {
+  const parsedMatchDate = parseDateTimeInput(matchDate);
+  if (!homeTeam?.trim() || !awayTeam?.trim() || !parsedMatchDate) {
     return NextResponse.json({ error: "Kaikki kentät ovat pakollisia" }, { status: 400 });
   }
   const matchPair = await prisma.matchPair.update({
     where: { id: Number(id) },
-    data: { homeTeam: homeTeam.trim(), awayTeam: awayTeam.trim(), matchDate: new Date(matchDate) },
+    data: { homeTeam: homeTeam.trim(), awayTeam: awayTeam.trim(), matchDate: parsedMatchDate },
   });
   return NextResponse.json(matchPair);
 }

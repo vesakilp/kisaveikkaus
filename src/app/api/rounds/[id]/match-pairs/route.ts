@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -20,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     
     // Validate data
     for (const item of items) {
-      if (!item.homeTeam?.trim() || !item.awayTeam?.trim() || !item.matchDate) {
+      if (!item.homeTeam?.trim() || !item.awayTeam?.trim() || !parseDateTimeInput(item.matchDate)) {
         return NextResponse.json(
           { error: "Kaikki kentät ovat pakollisia (homeTeam, awayTeam, matchDate)" },
           { status: 400 }
@@ -35,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           data: {
             homeTeam: item.homeTeam.trim(),
             awayTeam: item.awayTeam.trim(),
-            matchDate: new Date(item.matchDate),
+            matchDate: parseDateTimeInput(item.matchDate)!,
             roundId: Number(id),
           },
         })
