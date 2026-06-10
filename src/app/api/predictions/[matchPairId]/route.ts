@@ -41,10 +41,9 @@ export async function PUT(
     );
   }
 
-  // Validate that the round's betting window is still open
   const matchPair = await prisma.matchPair.findUnique({
     where: { id: Number(matchPairId) },
-    include: { round: true },
+    select: { matchDate: true },
   });
 
   if (!matchPair) {
@@ -52,8 +51,8 @@ export async function PUT(
   }
 
   const now = new Date();
-  if (now < matchPair.round.bettingStart || now > matchPair.round.bettingEnd) {
-    return NextResponse.json({ error: "Veikkausaika ei ole käynnissä" }, { status: 403 });
+  if (now >= matchPair.matchDate) {
+    return NextResponse.json({ error: "Veikkausaika on päättynyt ottelun alkaessa" }, { status: 403 });
   }
 
   const prediction = await prisma.prediction.upsert({

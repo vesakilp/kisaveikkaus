@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { formatDateTimeInFinland } from "@/lib/timezone";
 
 interface Round {
   id: number;
   name: string;
-  bettingStart: string;
-  bettingEnd: string;
   _count: { matchPairs: number };
+  matchPairs: { matchDate: string }[];
 }
 
 interface Competition {
@@ -26,6 +24,7 @@ export default function CompetitionPage() {
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentTime] = useState(() => Date.now());
 
   useEffect(() => {
     fetch(`/api/competitions/${competitionId}`)
@@ -38,9 +37,10 @@ export default function CompetitionPage() {
       .finally(() => setLoading(false));
   }, [competitionId]);
 
-  const now = new Date();
-  const activeRounds = competition?.rounds.filter(r => new Date(r.bettingEnd) >= now) || [];
-  const pastRounds = competition?.rounds.filter(r => new Date(r.bettingEnd) < now) || [];
+  const activeRounds =
+    competition?.rounds.filter((round) => round.matchPairs.some((matchPair) => new Date(matchPair.matchDate).getTime() > currentTime)) || [];
+  const pastRounds =
+    competition?.rounds.filter((round) => !round.matchPairs.some((matchPair) => new Date(matchPair.matchDate).getTime() > currentTime)) || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -98,7 +98,7 @@ export default function CompetitionPage() {
                         <div className="min-w-0">
                           <h3 className="font-semibold text-gray-900">{round.name}</h3>
                           <p className="mt-1 text-xs text-gray-500">
-                            Veikkaus päättyy: {formatDateTimeInFinland(round.bettingEnd)}
+                            Veikkaus avoinna ottelun alkuun asti (Suomen aikaa)
                           </p>
                           <p className="mt-0.5 text-xs text-gray-400">
                             {round._count.matchPairs} otteluparia
@@ -131,7 +131,7 @@ export default function CompetitionPage() {
                         <div className="min-w-0">
                           <h3 className="font-semibold text-gray-700">{round.name}</h3>
                           <p className="mt-1 text-xs text-gray-500">
-                            Veikkaus päättyi: {formatDateTimeInFinland(round.bettingEnd)}
+                            Kaikki kierroksen ottelut ovat alkaneet
                           </p>
                           <p className="mt-0.5 text-xs text-gray-400">
                             {round._count.matchPairs} otteluparia
