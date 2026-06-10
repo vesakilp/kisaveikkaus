@@ -49,10 +49,11 @@ export default function RoundPage() {
   const [resultForm, setResultForm] = useState({ actualHomeScore: "", actualAwayScore: "" });
   const [savingResult, setSavingResult] = useState(false);
 
-  const [hideFinished, setHideFinished] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("admin-round-hide-finished") === "true";
-  });
+  const [hideFinished, setHideFinished] = useState(false);
+
+  useEffect(() => {
+    setHideFinished(localStorage.getItem("admin-round-hide-finished") === "true");
+  }, []);
 
   const toggleHideFinished = () => {
     setHideFinished((prev) => {
