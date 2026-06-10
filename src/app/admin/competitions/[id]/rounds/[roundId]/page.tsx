@@ -64,13 +64,8 @@ export default function RoundPage() {
   const [savingResult, setSavingResult] = useState(false);
 
   useEffect(() => {
-    if (!roundId) {
-      setRound(null);
-      setLoading(false);
-      return;
-    }
+    if (!roundId) return;
 
-    setLoading(true);
     fetch(`/api/rounds/${roundId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setRound(data))

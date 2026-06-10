@@ -41,13 +41,8 @@ export default function CompetitionPage() {
   const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
-    if (!competitionId) {
-      setCompetition(null);
-      setLoading(false);
-      return;
-    }
+    if (!competitionId) return;
 
-    setLoading(true);
     fetch(`/api/competitions/${competitionId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setCompetition(data))
