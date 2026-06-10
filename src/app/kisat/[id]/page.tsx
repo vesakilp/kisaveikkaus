@@ -21,20 +21,33 @@ interface Competition {
 
 export default function CompetitionPage() {
   const params = useParams();
-  const competitionId = params.id as string;
+  const competitionIdParam = params.id;
+  const competitionId = Array.isArray(competitionIdParam) ? competitionIdParam[0] : competitionIdParam;
 
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!competitionId) {
+      setCompetition(null);
+      setError("");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
     fetch(`/api/competitions/${competitionId}`)
       .then((r) => {
         if (!r.ok) throw new Error("Kisaa ei voitu ladata");
         return r.json();
       })
       .then((data) => setCompetition(data))
-      .catch(() => setError("Kisaa ei voitu ladata. Yritä päivittää sivu."))
+      .catch(() => {
+        setCompetition(null);
+        setError("Kisaa ei voitu ladata. Yritä päivittää sivu.");
+      })
       .finally(() => setLoading(false));
   }, [competitionId]);
 

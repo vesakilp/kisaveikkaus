@@ -75,7 +75,8 @@ function StatusIcon({ isSaving, saveError, showOk }: { isSaving: boolean; saveEr
 
 export default function RoundPredictionPage() {
   const params = useParams();
-  const roundId = params.roundId as string;
+  const roundIdParam = params.roundId;
+  const roundId = Array.isArray(roundIdParam) ? roundIdParam[0] : roundIdParam;
 
   const [round, setRound] = useState<Round | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +89,13 @@ export default function RoundPredictionPage() {
   const [saveErrors, setSaveErrors] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    if (!roundId) {
+      setRound(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     Promise.all([
       fetch(`/api/rounds/${roundId}`).then((r) => {
         if (!r.ok) throw new Error("Kierrosta ei löydy");
