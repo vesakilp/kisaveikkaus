@@ -140,7 +140,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           });
           if (externalKey) {
             existingByKey.set(externalKey, match);
-            existingByKey.set(externalKey, match);
           }
           existingByKey.set(teamKey, match);
         }
@@ -167,8 +166,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             continue;
           }
 
+          const matchedByExternalId = !!item.externalMatchId && match.externalMatchId === item.externalMatchId;
           const shouldUpdateTeams =
-            !!item.externalMatchId && (match.homeTeam !== item.homeTeam || match.awayTeam !== item.awayTeam);
+            matchedByExternalId && (match.homeTeam !== item.homeTeam || match.awayTeam !== item.awayTeam);
           const shouldUpdateMatchDate = match.matchDate.getTime() !== item.matchDate.getTime();
           const shouldFillExternalMatchId = !match.externalMatchId && !!item.externalMatchId;
           const shouldUpdate =
