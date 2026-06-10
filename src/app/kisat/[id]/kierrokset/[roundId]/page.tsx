@@ -33,6 +33,8 @@ type ScoreField = "homeScore" | "awayScore";
 const MAX_SCORE_DIGITS = 2;
 const SCORE_INPUT_PATTERN = new RegExp(`^\\d{0,${MAX_SCORE_DIGITS}}$`);
 const MATCH_STATUS_TICK_MS = 30_000;
+const SHOW_MISSING_ONLY_STORAGE_KEY = "round-predictions-show-missing-only";
+const HIDE_PLAYED_STORAGE_KEY = "round-predictions-hide-played";
 
 function scoreToString(score: number | null | undefined): string {
   return score !== null && score !== undefined ? String(score) : "";
@@ -76,6 +78,8 @@ export default function RoundPredictionPage() {
   const saveTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const [saveErrors, setSaveErrors] = useState<Record<number, string>>({});
   const [showMissingOnly, setShowMissingOnly] = useState(false);
+  const [hidePlayed, setHidePlayed] = useState(false);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -128,6 +132,28 @@ export default function RoundPredictionPage() {
     const intervalId = setInterval(() => setCurrentTime(Date.now()), MATCH_STATUS_TICK_MS);
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    const storedShowMissingOnly = window.localStorage.getItem(SHOW_MISSING_ONLY_STORAGE_KEY);
+    const storedHidePlayed = window.localStorage.getItem(HIDE_PLAYED_STORAGE_KEY);
+
+    if (storedShowMissingOnly === "true" || storedShowMissingOnly === "false") {
+      setShowMissingOnly(storedShowMissingOnly === "true");
+    }
+
+    if (storedHidePlayed === "true" || storedHidePlayed === "false") {
+      setHidePlayed(storedHidePlayed === "true");
+    }
+
+    setFiltersLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersLoaded) return;
+
+    window.localStorage.setItem(SHOW_MISSING_ONLY_STORAGE_KEY, String(showMissingOnly));
+    window.localStorage.setItem(HIDE_PLAYED_STORAGE_KEY, String(hidePlayed));
+  }, [filtersLoaded, hidePlayed, showMissingOnly]);
 
   const savePrediction = useCallback(async (matchPairId: number, homeScore: string, awayScore: string) => {
     setSaving((prev) => ({ ...prev, [matchPairId]: true }));
@@ -188,13 +214,16 @@ export default function RoundPredictionPage() {
 
   const visibleMatchPairs = useMemo(() => {
     if (!round) return [];
-    if (!showMissingOnly) return round.matchPairs;
-
     return round.matchPairs.filter((matchPair) => {
+      const hasResult = matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null;
+      if (hidePlayed && hasResult) return false;
+
+      if (!showMissingOnly) return true;
+
       const score = scores[matchPair.id] ?? { homeScore: "", awayScore: "" };
       return score.homeScore === "" || score.awayScore === "";
     });
-  }, [round, scores, showMissingOnly]);
+  }, [hidePlayed, round, scores, showMissingOnly]);
 
   if (loading) {
     return (
@@ -236,18 +265,32 @@ export default function RoundPredictionPage() {
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
-        <button
-          type="button"
-          onClick={() => setShowMissingOnly((prev) => !prev)}
-          aria-pressed={showMissingOnly}
-          className={`mb-4 inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
-            showMissingOnly
-              ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700"
-              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          Tuloksia puuttuu
-        </button>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setShowMissingOnly((prev) => !prev)}
+            aria-pressed={showMissingOnly}
+            className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+              showMissingOnly
+                ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700"
+                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Tuloksia puuttuu
+          </button>
+          <button
+            type="button"
+            onClick={() => setHidePlayed((prev) => !prev)}
+            aria-pressed={hidePlayed}
+            className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+              hidePlayed
+                ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700"
+                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Piilota pelatut
+          </button>
+        </div>
 
         <p className="mb-4 text-sm text-gray-500">
           Anna otteluiden tulokset. Tulokset tallentuvat automaattisesti.
@@ -259,7 +302,7 @@ export default function RoundPredictionPage() {
           </div>
         ) : visibleMatchPairs.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
-            <p className="text-gray-500">Kaikissa ottelupareissa on jo molemmat tulokset</p>
+            <p className="text-gray-500">Ei näytettäviä ottelupareja valituilla suodattimilla</p>
           </div>
         ) : (
           <div className="space-y-3">
