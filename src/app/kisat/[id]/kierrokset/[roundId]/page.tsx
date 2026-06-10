@@ -75,6 +75,7 @@ export default function RoundPredictionPage() {
   const iconTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const saveTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const [saveErrors, setSaveErrors] = useState<Record<number, string>>({});
+  const [showMissingOnly, setShowMissingOnly] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -185,6 +186,16 @@ export default function RoundPredictionPage() {
     });
   }, [matchStartById, round, savePrediction]);
 
+  const visibleMatchPairs = useMemo(() => {
+    if (!round) return [];
+    if (!showMissingOnly) return round.matchPairs;
+
+    return round.matchPairs.filter((matchPair) => {
+      const score = scores[matchPair.id] ?? { homeScore: "", awayScore: "" };
+      return score.homeScore === "" || score.awayScore === "";
+    });
+  }, [round, scores, showMissingOnly]);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -225,6 +236,19 @@ export default function RoundPredictionPage() {
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+        <button
+          type="button"
+          onClick={() => setShowMissingOnly((prev) => !prev)}
+          aria-pressed={showMissingOnly}
+          className={`mb-4 inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+            showMissingOnly
+              ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Tuloksia puuttuu
+        </button>
+
         <p className="mb-4 text-sm text-gray-500">
           Anna otteluiden tulokset. Tulokset tallentuvat automaattisesti.
         </p>
@@ -233,9 +257,13 @@ export default function RoundPredictionPage() {
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
             <p className="text-gray-400">Ei ottelupareja tässä kierroksessa</p>
           </div>
+        ) : visibleMatchPairs.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
+            <p className="text-gray-500">Kaikissa ottelupareissa on jo molemmat tulokset</p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {round.matchPairs.map((matchPair) => {
+            {visibleMatchPairs.map((matchPair) => {
               const score = scores[matchPair.id] ?? { homeScore: "", awayScore: "" };
               const isSaving = saving[matchPair.id] ?? false;
               const showOk = savedAt[matchPair.id] !== undefined;
