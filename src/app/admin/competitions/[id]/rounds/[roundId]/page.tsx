@@ -49,6 +49,19 @@ export default function RoundPage() {
   const [resultForm, setResultForm] = useState({ actualHomeScore: "", actualAwayScore: "" });
   const [savingResult, setSavingResult] = useState(false);
 
+  const [hideFinished, setHideFinished] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("admin-round-hide-finished") === "true";
+  });
+
+  const toggleHideFinished = () => {
+    setHideFinished((prev) => {
+      const next = !prev;
+      localStorage.setItem("admin-round-hide-finished", String(next));
+      return next;
+    });
+  };
+
   useEffect(() => {
     fetch(`/api/rounds/${roundId}`)
       .then((r) => r.json())
@@ -165,7 +178,19 @@ export default function RoundPage() {
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Otteluparit</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Otteluparit</h2>
+            <button
+              onClick={toggleHideFinished}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                hideFinished
+                  ? "border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {hideFinished ? "👁 Näytä tulokset" : "🙈 Piilota tulokset"}
+            </button>
+          </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             <label className="cursor-pointer">
               <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto">
@@ -247,7 +272,9 @@ export default function RoundPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {round.matchPairs.map((match) => (
+            {round.matchPairs
+              .filter((match) => !hideFinished || match.actualHomeScore === null || match.actualAwayScore === null)
+              .map((match) => (
               <div key={match.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                 {editMatchId === match.id ? (
                   <div className="space-y-3">
