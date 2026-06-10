@@ -142,7 +142,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
           if (externalKey) {
             existingByKey.set(externalKey, match);
-            existingByExternalId.set(match.externalMatchId!, match);
+            existingByExternalId.set(match.externalMatchId, match);
           }
           existingByKey.set(teamKey, match);
         }
@@ -172,12 +172,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           if (item.externalMatchId) {
             const conflictByExternalId = existingByExternalId.get(item.externalMatchId);
             if (conflictByExternalId && conflictByExternalId.id !== match.id) {
-              throw new Error("Unique constraint: externalMatchId already used by another match");
+              throw new Error("Unique constraint: externalMatchId on jo käytössä toisella ottelulla");
             }
           }
 
+          const shouldUpdateTeams =
+            !!item.externalMatchId && (match.homeTeam !== item.homeTeam || match.awayTeam !== item.awayTeam);
           const shouldFillExternalMatchId = !match.externalMatchId && !!item.externalMatchId;
-          const shouldUpdate = match.matchDate.getTime() !== item.matchDate.getTime() || shouldFillExternalMatchId;
+          const shouldUpdate =
+            match.matchDate.getTime() !== item.matchDate.getTime() || shouldFillExternalMatchId || shouldUpdateTeams;
 
           if (!shouldUpdate) {
             unchanged += 1;
@@ -188,6 +191,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             where: { id: match.id },
             data: {
               ...(shouldFillExternalMatchId ? { externalMatchId: item.externalMatchId } : {}),
+              ...(shouldUpdateTeams ? { homeTeam: item.homeTeam, awayTeam: item.awayTeam } : {}),
               matchDate: item.matchDate,
             },
           });
