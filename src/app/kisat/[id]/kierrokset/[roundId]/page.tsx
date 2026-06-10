@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useParams } from "next/navigation";
 import { formatDateTimeInFinland } from "@/lib/timezone";
 import { calculatePoints } from "@/lib/points";
@@ -35,9 +35,57 @@ const SCORE_INPUT_PATTERN = new RegExp(`^\\d{0,${MAX_SCORE_DIGITS}}$`);
 const MATCH_STATUS_TICK_MS = 30_000;
 const SHOW_MISSING_ONLY_STORAGE_KEY = "round-predictions-show-missing-only";
 const HIDE_PLAYED_STORAGE_KEY = "round-predictions-hide-played";
+const FILTER_STORAGE_EVENT = "round-predictions-filter-change";
 
 function scoreToString(score: number | null | undefined): string {
   return score !== null && score !== undefined ? String(score) : "";
+}
+
+function readStoredBoolean(key: string, fallback: boolean): boolean {
+  if (typeof window === "undefined") return fallback;
+
+  const storedValue = window.localStorage.getItem(key);
+  if (storedValue === "true") return true;
+  if (storedValue === "false") return false;
+  return fallback;
+}
+
+function useStoredBoolean(key: string, fallback = false) {
+  const value = useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined") return () => undefined;
+
+      const handleStorageChange = (event: Event) => {
+        if (event instanceof StorageEvent) {
+          if (event.key !== null && event.key !== key) return;
+        } else if (!(event instanceof CustomEvent) || event.detail !== key) {
+          return;
+        }
+
+        onStoreChange();
+      };
+
+      window.addEventListener("storage", handleStorageChange);
+      window.addEventListener(FILTER_STORAGE_EVENT, handleStorageChange);
+
+      return () => {
+        window.removeEventListener("storage", handleStorageChange);
+        window.removeEventListener(FILTER_STORAGE_EVENT, handleStorageChange);
+      };
+    },
+    () => readStoredBoolean(key, fallback),
+    () => fallback,
+  );
+
+  const setValue = useCallback((nextValue: boolean | ((currentValue: boolean) => boolean)) => {
+    if (typeof window === "undefined") return;
+
+    const resolvedValue = typeof nextValue === "function" ? nextValue(readStoredBoolean(key, fallback)) : nextValue;
+    window.localStorage.setItem(key, String(resolvedValue));
+    window.dispatchEvent(new CustomEvent(FILTER_STORAGE_EVENT, { detail: key }));
+  }, [fallback, key]);
+
+  return [value, setValue] as const;
 }
 
 function StatusIcon({ isSaving, saveError, showOk }: { isSaving: boolean; saveError?: string; showOk: boolean }) {
@@ -77,9 +125,8 @@ export default function RoundPredictionPage() {
   const iconTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const saveTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const [saveErrors, setSaveErrors] = useState<Record<number, string>>({});
-  const [showMissingOnly, setShowMissingOnly] = useState(false);
-  const [hidePlayed, setHidePlayed] = useState(false);
-  const [filtersLoaded, setFiltersLoaded] = useState(false);
+  const [showMissingOnly, setShowMissingOnly] = useStoredBoolean(SHOW_MISSING_ONLY_STORAGE_KEY);
+  const [hidePlayed, setHidePlayed] = useStoredBoolean(HIDE_PLAYED_STORAGE_KEY);
 
   useEffect(() => {
     Promise.all([
@@ -132,28 +179,6 @@ export default function RoundPredictionPage() {
     const intervalId = setInterval(() => setCurrentTime(Date.now()), MATCH_STATUS_TICK_MS);
     return () => clearInterval(intervalId);
   }, []);
-
-  useEffect(() => {
-    const storedShowMissingOnly = window.localStorage.getItem(SHOW_MISSING_ONLY_STORAGE_KEY);
-    const storedHidePlayed = window.localStorage.getItem(HIDE_PLAYED_STORAGE_KEY);
-
-    if (storedShowMissingOnly === "true" || storedShowMissingOnly === "false") {
-      setShowMissingOnly(storedShowMissingOnly === "true");
-    }
-
-    if (storedHidePlayed === "true" || storedHidePlayed === "false") {
-      setHidePlayed(storedHidePlayed === "true");
-    }
-
-    setFiltersLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (!filtersLoaded) return;
-
-    window.localStorage.setItem(SHOW_MISSING_ONLY_STORAGE_KEY, String(showMissingOnly));
-    window.localStorage.setItem(HIDE_PLAYED_STORAGE_KEY, String(hidePlayed));
-  }, [filtersLoaded, hidePlayed, showMissingOnly]);
 
   const savePrediction = useCallback(async (matchPairId: number, homeScore: string, awayScore: string) => {
     setSaving((prev) => ({ ...prev, [matchPairId]: true }));
