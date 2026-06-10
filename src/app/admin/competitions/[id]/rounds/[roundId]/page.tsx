@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { JsonInfoPopup } from "@/components/JsonInfoPopup";
-import { formatDateTimeInFinland } from "@/lib/timezone";
+import { formatDateTimeInFinland, toDatetimeLocalInFinland } from "@/lib/timezone";
 
 interface MatchPair {
   id: number;
@@ -23,16 +23,6 @@ interface Round {
   bettingEnd: string;
   matchPairs: MatchPair[];
   competition: { id: number; name: string };
-}
-
-function toDateInput(iso: string) {
-  const date = new Date(iso);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("fi-FI", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 const emptyMatch = { homeTeam: "", awayTeam: "", matchDate: "" };
@@ -231,9 +221,9 @@ export default function RoundPage() {
               </div>
             </div>
             <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Ottelun päivämäärä</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Ottelun alkamisaika (Suomen aika)</label>
               <input
-                type="date"
+                type="datetime-local"
                 value={matchForm.matchDate}
                 onChange={(e) => setMatchForm({ ...matchForm, matchDate: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:w-auto"
@@ -279,7 +269,7 @@ export default function RoundPage() {
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                       <input
-                        type="date"
+                        type="datetime-local"
                         value={editMatch.matchDate}
                         onChange={(e) => setEditMatch({ ...editMatch, matchDate: e.target.value })}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:w-auto"
@@ -325,7 +315,7 @@ export default function RoundPage() {
                 ) : (
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                      <p className="text-sm text-gray-400">{formatDate(match.matchDate)}</p>
+                      <p className="text-sm text-gray-400">{formatDateTimeInFinland(match.matchDate)}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-sm font-medium text-gray-900">
                         <span className="truncate">{match.homeTeam}</span>
                         <span className="text-gray-400">vs</span>
@@ -353,7 +343,11 @@ export default function RoundPage() {
                       <button
                         onClick={() => {
                           setEditMatchId(match.id);
-                          setEditMatch({ homeTeam: match.homeTeam, awayTeam: match.awayTeam, matchDate: toDateInput(match.matchDate) });
+                          setEditMatch({
+                            homeTeam: match.homeTeam,
+                            awayTeam: match.awayTeam,
+                            matchDate: toDatetimeLocalInFinland(match.matchDate),
+                          });
                         }}
                         className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto"
                       >
