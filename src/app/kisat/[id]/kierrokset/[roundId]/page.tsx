@@ -115,7 +115,12 @@ export default function RoundPredictionPage() {
 
   const matchStartById = useMemo(() => {
     if (!round) return new Map<number, number>();
-    return new Map(round.matchPairs.map((matchPair) => [matchPair.id, new Date(matchPair.matchDate).getTime()]));
+    const startTimes = new Map<number, number>();
+    for (const matchPair of round.matchPairs) {
+      const matchStart = new Date(matchPair.matchDate).getTime();
+      if (Number.isFinite(matchStart)) startTimes.set(matchPair.id, matchStart);
+    }
+    return startTimes;
   }, [round]);
 
   useEffect(() => {
@@ -236,7 +241,7 @@ export default function RoundPredictionPage() {
               const showOk = savedAt[matchPair.id] !== undefined;
               const saveError = saveErrors[matchPair.id];
               const matchStart = matchStartById.get(matchPair.id);
-              const isMatchOpen = matchStart !== undefined && Number.isFinite(matchStart) && currentTime < matchStart;
+              const isMatchOpen = matchStart !== undefined && currentTime < matchStart;
 
               const hasResult = matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null;
               const predHome = score.homeScore === "" ? null : Number(score.homeScore);
