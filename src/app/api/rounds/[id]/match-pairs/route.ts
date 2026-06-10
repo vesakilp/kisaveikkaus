@@ -17,7 +17,7 @@ type NormalizedMatchPairInput = {
 
 function buildMatchKey(item: { externalMatchId: string | null; homeTeam: string; awayTeam: string }) {
   if (item.externalMatchId) return `external:${item.externalMatchId}`;
-  return `teams:${item.homeTeam.toLocaleLowerCase("fi-FI")}::${item.awayTeam.toLocaleLowerCase("fi-FI")}`;
+  return `teams:${item.homeTeam.toLowerCase()}::${item.awayTeam.toLowerCase()}`;
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -179,6 +179,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json(summary, { status: 200 });
   } catch (error) {
     console.error("Error creating match pairs:", error);
+    if (error instanceof Error && error.message.toLowerCase().includes("unique constraint")) {
+      return NextResponse.json(
+        { error: "Otteluparin tunniste on jo käytössä tällä kierroksella (externalMatchId tai koti+vieras)." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: "Virhe otteluparien luomisessa", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
