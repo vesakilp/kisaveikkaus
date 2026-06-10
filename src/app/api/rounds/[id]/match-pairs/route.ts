@@ -47,6 +47,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         return NextResponse.json({ error: "Virheellinen matchDate" }, { status: 400 });
       }
 
+      const existingMatch = await prisma.matchPair.findFirst({
+        where: {
+          roundId: Number(id),
+          OR: [
+            ...(body.externalMatchId?.trim() ? [{ externalMatchId: body.externalMatchId.trim() }] : []),
+            { homeTeam: body.homeTeam.trim(), awayTeam: body.awayTeam.trim() },
+          ],
+        },
+        select: { id: true },
+      });
+      if (existingMatch) {
+        return NextResponse.json(
+          { error: "Ottelupari on jo olemassa tällä kierroksella (externalMatchId tai koti+vieras)." },
+          { status: 409 }
+        );
+      }
+
       const created = await prisma.matchPair.create({
         data: {
           externalMatchId: body.externalMatchId?.trim() || null,
@@ -108,6 +125,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         });
 
         const existingByKey = new Map<string, (typeof existing)[number]>();
+        const existingByExternalId = new Map<string, (typeof existing)[number]>();
         for (const match of existing) {
           const externalKey = match.externalMatchId
             ? buildMatchKey({
@@ -122,7 +140,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             awayTeam: match.awayTeam,
           });
 
-          if (externalKey) existingByKey.set(externalKey, match);
+          if (externalKey) {
+            existingByKey.set(externalKey, match);
+            existingByExternalId.set(match.externalMatchId!, match);
+          }
           existingByKey.set(teamKey, match);
         }
 
@@ -148,8 +169,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             continue;
           }
 
-          const shouldUpdate =
-            match.matchDate.getTime() !== item.matchDate.getTime();
+          if (item.externalMatchId) {
+            const conflictByExternalId = existingByExternalId.get(item.externalMatchId);
+            if (conflictByExternalId && conflictByExternalId.id !== match.id) {
+              throw new Error("Unique constraint: externalMatchId already used by another match");
+            }
+          }
+
+          const shouldFillExternalMatchId = !match.externalMatchId && !!item.externalMatchId;
+          const shouldUpdate = match.matchDate.getTime() !== item.matchDate.getTime() || shouldFillExternalMatchId;
 
           if (!shouldUpdate) {
             unchanged += 1;
@@ -159,6 +187,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           await tx.matchPair.update({
             where: { id: match.id },
             data: {
+              ...(shouldFillExternalMatchId ? { externalMatchId: item.externalMatchId } : {}),
               matchDate: item.matchDate,
             },
           });
