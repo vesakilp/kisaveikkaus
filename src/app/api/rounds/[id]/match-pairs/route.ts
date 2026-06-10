@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { NextResponse } from "next/server";
 
 type MatchPairInput = {
@@ -205,7 +206,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json(summary, { status: 200 });
   } catch (error) {
     console.error("Error creating match pairs:", error);
-    if (error instanceof Error && error.message.toLowerCase().includes("unique constraint")) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return NextResponse.json(
         { error: "Otteluparin tunniste on jo käytössä tällä kierroksella (externalMatchId tai koti+vieras)." },
         { status: 409 }
