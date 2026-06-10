@@ -25,7 +25,7 @@ export default function CompetitionPage() {
   const competitionId = Array.isArray(competitionIdParam) ? competitionIdParam[0] : competitionIdParam;
 
   const [competition, setCompetition] = useState<Competition | null>(null);
-  const [loading, setLoading] = useState(() => Boolean(competitionId));
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
