@@ -79,7 +79,7 @@ export default function RoundPredictionPage() {
   const roundId = Array.isArray(roundIdParam) ? roundIdParam[0] : roundIdParam;
 
   const [round, setRound] = useState<Round | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(roundId));
   const [scores, setScores] = useState<Record<number, { homeScore: string; awayScore: string }>>({});
   const [savedAt, setSavedAt] = useState<Record<number, number>>({});
   const [saving, setSaving] = useState<Record<number, boolean>>({});
@@ -89,13 +89,8 @@ export default function RoundPredictionPage() {
   const [saveErrors, setSaveErrors] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    if (!roundId) {
-      setRound(null);
-      setLoading(false);
-      return;
-    }
+    if (!roundId) return;
 
-    setLoading(true);
     Promise.all([
       fetch(`/api/rounds/${roundId}`).then((r) => {
         if (!r.ok) throw new Error("Kierrosta ei löydy");

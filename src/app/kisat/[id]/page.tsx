@@ -25,19 +25,11 @@ export default function CompetitionPage() {
   const competitionId = Array.isArray(competitionIdParam) ? competitionIdParam[0] : competitionIdParam;
 
   const [competition, setCompetition] = useState<Competition | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(competitionId));
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!competitionId) {
-      setCompetition(null);
-      setError("");
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError("");
+    if (!competitionId) return;
     fetch(`/api/competitions/${competitionId}`)
       .then((r) => {
         if (!r.ok) throw new Error("Kisaa ei voitu ladata");
@@ -54,6 +46,28 @@ export default function CompetitionPage() {
   const now = new Date();
   const activeRounds = competition?.rounds.filter(r => new Date(r.bettingEnd) >= now) || [];
   const pastRounds = competition?.rounds.filter(r => new Date(r.bettingEnd) < now) || [];
+
+  if (!competitionId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6">
+          <div className="mx-auto w-full max-w-3xl">
+            <div className="mb-2">
+              <Link href="/" className="text-sm text-gray-400 transition-colors hover:text-gray-600">
+                ← Takaisin
+              </Link>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Kisa</h1>
+          </div>
+        </header>
+        <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-12">
+            <p className="text-gray-400">Kisaa ei löytynyt</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
