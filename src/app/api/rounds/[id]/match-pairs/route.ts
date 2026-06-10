@@ -125,7 +125,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         });
 
         const existingByKey = new Map<string, (typeof existing)[number]>();
-        const existingByExternalId = new Map<string, (typeof existing)[number]>();
         for (const match of existing) {
           const externalKey = match.externalMatchId
             ? buildMatchKey({
@@ -139,10 +138,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             homeTeam: match.homeTeam,
             awayTeam: match.awayTeam,
           });
-
           if (externalKey) {
             existingByKey.set(externalKey, match);
-            existingByExternalId.set(match.externalMatchId, match);
+            existingByKey.set(externalKey, match);
           }
           existingByKey.set(teamKey, match);
         }
@@ -169,18 +167,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             continue;
           }
 
-          if (item.externalMatchId) {
-            const conflictByExternalId = existingByExternalId.get(item.externalMatchId);
-            if (conflictByExternalId && conflictByExternalId.id !== match.id) {
-              throw new Error("Unique constraint: externalMatchId on jo käytössä toisella ottelulla");
-            }
-          }
-
           const shouldUpdateTeams =
             !!item.externalMatchId && (match.homeTeam !== item.homeTeam || match.awayTeam !== item.awayTeam);
+          const shouldUpdateMatchDate = match.matchDate.getTime() !== item.matchDate.getTime();
           const shouldFillExternalMatchId = !match.externalMatchId && !!item.externalMatchId;
           const shouldUpdate =
-            match.matchDate.getTime() !== item.matchDate.getTime() || shouldFillExternalMatchId || shouldUpdateTeams;
+            shouldUpdateMatchDate || shouldFillExternalMatchId || shouldUpdateTeams;
 
           if (!shouldUpdate) {
             unchanged += 1;
@@ -192,7 +184,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             data: {
               ...(shouldFillExternalMatchId ? { externalMatchId: item.externalMatchId } : {}),
               ...(shouldUpdateTeams ? { homeTeam: item.homeTeam, awayTeam: item.awayTeam } : {}),
-              matchDate: item.matchDate,
+              ...(shouldUpdateMatchDate ? { matchDate: item.matchDate } : {}),
             },
           });
           updated += 1;
