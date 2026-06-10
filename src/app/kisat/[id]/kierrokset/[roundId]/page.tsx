@@ -213,7 +213,7 @@ export default function RoundPredictionPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{round.name}</h1>
             <p className="mt-0.5 text-sm text-gray-500">
-              Veikkaus on avoinna ottelukohtaisesti ottelun alkuun asti Suomen ajassa.
+              Veikkaus on avoinna ottelukohtaisesti ottelun alkuun asti Suomen ajan mukaan.
             </p>
           </div>
         </div>
@@ -235,8 +235,8 @@ export default function RoundPredictionPage() {
               const isSaving = saving[matchPair.id] ?? false;
               const showOk = savedAt[matchPair.id] !== undefined;
               const saveError = saveErrors[matchPair.id];
-              const matchStart = matchStartById.get(matchPair.id) ?? Number.NaN;
-              const isMatchOpen = currentTime < matchStart;
+              const matchStart = matchStartById.get(matchPair.id);
+              const isMatchOpen = Number.isFinite(matchStart) && currentTime < matchStart;
 
               const hasResult = matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null;
               const predHome = score.homeScore === "" ? null : Number(score.homeScore);

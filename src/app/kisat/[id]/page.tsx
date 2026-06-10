@@ -103,7 +103,7 @@ export default function CompetitionPage() {
                         <div className="min-w-0">
                           <h3 className="font-semibold text-gray-900">{round.name}</h3>
                           <p className="mt-1 text-xs text-gray-500">
-                            Veikkaus avoinna ottelun alkuun asti (Suomen aikaa)
+                            Veikkaus avoinna kunkin ottelun alkuun asti (Suomen aika)
                           </p>
                           <p className="mt-0.5 text-xs text-gray-400">
                             {round._count.matchPairs} otteluparia
