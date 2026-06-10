@@ -41,6 +41,7 @@ model Round {
 
 model MatchPair {
   id               Int          @id @default(autoincrement())
+  externalMatchId  String?
   homeTeam         String
   awayTeam         String
   matchDate        DateTime
@@ -51,6 +52,9 @@ model MatchPair {
   actualAwayScore  Int?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+
+  @@unique([roundId, externalMatchId])
+  @@unique([roundId, homeTeam, awayTeam])
 }
 
 model Prediction {

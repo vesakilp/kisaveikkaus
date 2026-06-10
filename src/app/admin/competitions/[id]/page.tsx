@@ -24,7 +24,8 @@ const emptyRound = { name: "", bettingStart: "", bettingEnd: "" };
 
 export default function CompetitionPage() {
   const params = useParams();
-  const id = params.id as string;
+  const competitionIdParam = params.id;
+  const competitionId = Array.isArray(competitionIdParam) ? competitionIdParam[0] : competitionIdParam;
 
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,17 +41,20 @@ export default function CompetitionPage() {
   const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
-    fetch(`/api/competitions/${id}`)
-      .then((r) => r.json())
+    if (!competitionId) return;
+
+    fetch(`/api/competitions/${competitionId}`)
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => setCompetition(data))
+      .catch(() => setCompetition(null))
       .finally(() => setLoading(false));
-  }, [id, refreshCount]);
+  }, [competitionId, refreshCount]);
 
   const handleSaveName = async () => {
     if (!nameInput.trim()) return;
     const ok = await confirm("Muokkaa kisaa", `Tallennetaanko nimi "${nameInput}"?`);
     if (!ok) return;
-    await fetch(`/api/competitions/${id}`, {
+    await fetch(`/api/competitions/${competitionId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: nameInput }),
@@ -64,7 +68,7 @@ export default function CompetitionPage() {
     const ok = await confirm("Luo kierros", `Luodaanko kierros "${roundForm.name}"?`);
     if (!ok) return;
     setSaving(true);
-    await fetch(`/api/competitions/${id}/rounds`, {
+    await fetch(`/api/competitions/${competitionId}/rounds`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(roundForm),
@@ -241,7 +245,7 @@ export default function CompetitionPage() {
                       <p className="mt-0.5 text-xs text-gray-400">{round._count.matchPairs} otteluparia</p>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                      <Link href={`/admin/competitions/${id}/rounds/${round.id}`} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:w-auto">
+                      <Link href={`/admin/competitions/${competition.id}/rounds/${round.id}`} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:w-auto">
                         Avaa
                       </Link>
                       <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, bettingStart: toDatetimeLocalInFinland(round.bettingStart), bettingEnd: toDatetimeLocalInFinland(round.bettingEnd) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">

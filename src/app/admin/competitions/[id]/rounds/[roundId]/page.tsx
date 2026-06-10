@@ -39,8 +39,10 @@ const emptyMatch = { homeTeam: "", awayTeam: "", matchDate: "" };
 
 export default function RoundPage() {
   const params = useParams();
-  const roundId = params.roundId as string;
-  const competitionId = params.id as string;
+  const roundIdParam = params.roundId;
+  const competitionIdParam = params.id;
+  const roundId = Array.isArray(roundIdParam) ? roundIdParam[0] : roundIdParam;
+  const competitionId = Array.isArray(competitionIdParam) ? competitionIdParam[0] : competitionIdParam;
 
   const [round, setRound] = useState<Round | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,7 @@ export default function RoundPage() {
   const [editMatchId, setEditMatchId] = useState<number | null>(null);
   const [editMatch, setEditMatch] = useState(emptyMatch);
   const [jsonError, setJsonError] = useState("");
+  const [jsonSuccess, setJsonSuccess] = useState("");
   const [showJsonInfo, setShowJsonInfo] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = useCallback(() => setRefreshCount((count) => count + 1), []);
@@ -61,9 +64,12 @@ export default function RoundPage() {
   const [savingResult, setSavingResult] = useState(false);
 
   useEffect(() => {
+    if (!roundId) return;
+
     fetch(`/api/rounds/${roundId}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => setRound(data))
+      .catch(() => setRound(null))
       .finally(() => setLoading(false));
   }, [roundId, refreshCount]);
 
@@ -121,6 +127,7 @@ export default function RoundPage() {
 
   const handleJsonFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setJsonError("");
+    setJsonSuccess("");
     const file = e.target.files?.[0];
     if (!file) return;
     try {
@@ -137,11 +144,16 @@ export default function RoundPage() {
         if (fileRef.current) fileRef.current.value = "";
         return;
       }
-      await fetch(`/api/rounds/${roundId}/match-pairs`, {
+      const response = await fetch(`/api/rounds/${roundId}/match-pairs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed),
       });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Virhe otteluparien tuonnissa");
+      }
+      setJsonSuccess(`Tuonti valmis: luotiin ${result.created}, päivitettiin ${result.updated}, ennallaan ${result.unchanged}.`);
       if (fileRef.current) fileRef.current.value = "";
       refresh();
     } catch (err) {
@@ -199,6 +211,11 @@ export default function RoundPage() {
         {jsonError && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             ⚠️ {jsonError}
+          </div>
+        )}
+        {jsonSuccess && (
+          <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            ✅ {jsonSuccess}
           </div>
         )}
 
