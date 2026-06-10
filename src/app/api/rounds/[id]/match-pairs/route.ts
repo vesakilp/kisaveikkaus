@@ -1,6 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+type MatchPairInput = {
+  externalMatchId?: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string;
+};
+
+type NormalizedMatchPairInput = {
+  externalMatchId: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: Date;
+};
+
+function buildMatchKey(item: { externalMatchId: string | null; homeTeam: string; awayTeam: string }) {
+  if (item.externalMatchId) return `external:${item.externalMatchId}`;
+  return `teams:${item.homeTeam.toLocaleLowerCase("fi-FI")}::${item.awayTeam.toLocaleLowerCase("fi-FI")}`;
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const matchPairs = await prisma.matchPair.findMany({
@@ -15,10 +34,35 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { id } = await params;
     const body = await request.json();
 
-    // Support bulk import (array) or single
-    const items = Array.isArray(body) ? body : [body];
-    
-    // Validate data
+    if (!Array.isArray(body)) {
+      if (!body.homeTeam?.trim() || !body.awayTeam?.trim() || !body.matchDate) {
+        return NextResponse.json(
+          { error: "Kaikki kentät ovat pakollisia (homeTeam, awayTeam, matchDate)" },
+          { status: 400 }
+        );
+      }
+
+      const matchDate = new Date(body.matchDate);
+      if (Number.isNaN(matchDate.getTime())) {
+        return NextResponse.json({ error: "Virheellinen matchDate" }, { status: 400 });
+      }
+
+      const created = await prisma.matchPair.create({
+        data: {
+          externalMatchId: body.externalMatchId?.trim() || null,
+          homeTeam: body.homeTeam.trim(),
+          awayTeam: body.awayTeam.trim(),
+          matchDate,
+          roundId: Number(id),
+        },
+      });
+      return NextResponse.json(created, { status: 201 });
+    }
+
+    const items: MatchPairInput[] = body;
+    const normalizedItems: NormalizedMatchPairInput[] = [];
+    const seenKeys = new Set<string>();
+
     for (const item of items) {
       if (!item.homeTeam?.trim() || !item.awayTeam?.trim() || !item.matchDate) {
         return NextResponse.json(
@@ -26,25 +70,113 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           { status: 400 }
         );
       }
+
+      const externalMatchId = item.externalMatchId?.trim() || null;
+      const normalizedItem: NormalizedMatchPairInput = {
+        externalMatchId,
+        homeTeam: item.homeTeam.trim(),
+        awayTeam: item.awayTeam.trim(),
+        matchDate: new Date(item.matchDate),
+      };
+
+      if (Number.isNaN(normalizedItem.matchDate.getTime())) {
+        return NextResponse.json({ error: "Virheellinen matchDate" }, { status: 400 });
+      }
+
+      const key = buildMatchKey(normalizedItem);
+      if (seenKeys.has(key)) {
+        return NextResponse.json(
+          { error: "JSON sisältää duplikaatteja samalla tunnisteella (externalMatchId tai homeTeam+awayTeam)" },
+          { status: 400 }
+        );
+      }
+      seenKeys.add(key);
+      normalizedItems.push(normalizedItem);
     }
-    
-    // Increase timeout for large imports (15 seconds - Accelerate max)
-    const created = await prisma.$transaction(
-      items.map((item: { homeTeam: string; awayTeam: string; matchDate: string }) =>
-        prisma.matchPair.create({
-          data: {
-            homeTeam: item.homeTeam.trim(),
-            awayTeam: item.awayTeam.trim(),
-            matchDate: new Date(item.matchDate),
-            roundId: Number(id),
+
+    const summary = await prisma.$transaction(
+      async (tx) => {
+        const existing = await tx.matchPair.findMany({
+          where: { roundId: Number(id) },
+          select: {
+            id: true,
+            externalMatchId: true,
+            homeTeam: true,
+            awayTeam: true,
+            matchDate: true,
           },
-        })
-      ),
+        });
+
+        const existingByKey = new Map<string, (typeof existing)[number]>();
+        for (const match of existing) {
+          existingByKey.set(
+            buildMatchKey({
+              externalMatchId: match.externalMatchId,
+              homeTeam: match.homeTeam,
+              awayTeam: match.awayTeam,
+            }),
+            match
+          );
+        }
+
+        let created = 0;
+        let updated = 0;
+        let unchanged = 0;
+
+        for (const item of normalizedItems) {
+          const key = buildMatchKey(item);
+          const match = existingByKey.get(key);
+
+          if (!match) {
+            await tx.matchPair.create({
+              data: {
+                externalMatchId: item.externalMatchId,
+                homeTeam: item.homeTeam,
+                awayTeam: item.awayTeam,
+                matchDate: item.matchDate,
+                roundId: Number(id),
+              },
+            });
+            created += 1;
+            continue;
+          }
+
+          const shouldUpdate =
+            match.externalMatchId !== item.externalMatchId ||
+            match.homeTeam !== item.homeTeam ||
+            match.awayTeam !== item.awayTeam ||
+            match.matchDate.getTime() !== item.matchDate.getTime();
+
+          if (!shouldUpdate) {
+            unchanged += 1;
+            continue;
+          }
+
+          await tx.matchPair.update({
+            where: { id: match.id },
+            data: {
+              externalMatchId: item.externalMatchId,
+              homeTeam: item.homeTeam,
+              awayTeam: item.awayTeam,
+              matchDate: item.matchDate,
+            },
+          });
+          updated += 1;
+        }
+
+        return {
+          total: normalizedItems.length,
+          created,
+          updated,
+          unchanged,
+        };
+      },
       {
-        timeout: 15000, // 15 seconds (Prisma Accelerate maximum)
+        timeout: 15000,
       }
     );
-    return NextResponse.json(created, { status: 201 });
+
+    return NextResponse.json(summary, { status: 200 });
   } catch (error) {
     console.error("Error creating match pairs:", error);
     return NextResponse.json(

@@ -2,6 +2,7 @@
 
 const JSON_EXAMPLE = `[
   {
+    "externalMatchId": "UEFA-12345",
     "homeTeam": "Suomi",
     "awayTeam": "Ruotsi",
     "matchDate": "2024-06-15T18:00:00"
@@ -34,10 +35,15 @@ export function JsonInfoPopup({ isOpen, onClose }: JsonInfoPopupProps) {
           JSON-tiedoston tulee sisältää taulukko ottelupareista. Jokainen ottelu on objekti, jossa on seuraavat kentät:
         </p>
         <ul className="mb-4 list-inside list-disc space-y-1 text-sm text-gray-700">
+          <li><span className="rounded bg-gray-100 px-1 font-mono">externalMatchId</span> – Vakaa ottelun tunniste (suositeltu, valinnainen)</li>
           <li><span className="rounded bg-gray-100 px-1 font-mono">homeTeam</span> – Kotijoukkueen nimi (teksti)</li>
           <li><span className="rounded bg-gray-100 px-1 font-mono">awayTeam</span> – Vierasjoukkueen nimi (teksti)</li>
           <li><span className="rounded bg-gray-100 px-1 font-mono">matchDate</span> – Ottelun päivämäärä ISO 8601 -muodossa</li>
         </ul>
+        <p className="mb-3 text-sm text-gray-600">
+          Tuonti tunnistaa olemassa olevat ottelut ensisijaisesti <span className="rounded bg-gray-100 px-1 font-mono">externalMatchId</span>-kentällä.
+          Jos sitä ei ole, tunnistus tehdään <span className="rounded bg-gray-100 px-1 font-mono">homeTeam + awayTeam</span> -yhdistelmällä.
+        </p>
         <p className="mb-2 text-sm font-medium text-gray-700">Esimerkki:</p>
         <pre className="overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800">
           {JSON_EXAMPLE}
