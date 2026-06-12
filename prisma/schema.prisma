@@ -16,15 +16,17 @@ model User {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   predictions         Prediction[]
+  championPredictions ChampionPrediction[]
   passwordResetTokens PasswordResetToken[]
 }
 
 model Competition {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  rounds    Round[]
+  id         Int         @id @default(autoincrement())
+  name       String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  rounds     Round[]
+  championBet ChampionBet?
 }
 
 model Round {
@@ -65,6 +67,54 @@ model Prediction {
   updatedAt   DateTime  @updatedAt
 
   @@unique([userId, matchPairId])
+}
+
+model ChampionBet {
+  id               Int                 @id @default(autoincrement())
+  competitionId    Int                 @unique
+  competition      Competition         @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  bettingStart     DateTime
+  bettingEnd       DateTime
+  points           Int                 @default(10)
+  resolvedOptionId Int?
+  resolvedOption   ChampionOption?     @relation("ResolvedChampionOption", fields: [resolvedOptionId], references: [id], onDelete: SetNull)
+  options          ChampionOption[]    @relation("ChampionBetOptions")
+  predictions      ChampionPrediction[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([bettingStart, bettingEnd])
+}
+
+model ChampionOption {
+  id                     Int                  @id @default(autoincrement())
+  championBetId          Int
+  championBet            ChampionBet          @relation("ChampionBetOptions", fields: [championBetId], references: [id], onDelete: Cascade)
+  name                   String
+  sortOrder              Int                  @default(0)
+  predictions            ChampionPrediction[]
+  resolvedForChampionBet ChampionBet[]        @relation("ResolvedChampionOption")
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  @@unique([championBetId, name])
+  @@index([championBetId, sortOrder])
+}
+
+model ChampionPrediction {
+  id            Int           @id @default(autoincrement())
+  userId        Int
+  championBetId Int
+  optionId      Int
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  championBet   ChampionBet   @relation(fields: [championBetId], references: [id], onDelete: Cascade)
+  option        ChampionOption @relation(fields: [optionId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([userId, championBetId])
+  @@index([championBetId])
+  @@index([optionId])
 }
 
 model PasswordResetToken {

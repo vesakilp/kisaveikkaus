@@ -138,6 +138,23 @@ export default function CompetitionPage() {
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+        <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Mestariveikkaus</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Hallitse voittajaveikkauksen aikaa, vaihtoehtoja ja oikeaa voittajaa.
+              </p>
+            </div>
+            <Link
+              href={`/admin/competitions/${id}/mestariveikkaus`}
+              className="inline-flex w-full items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 sm:w-auto"
+            >
+              Avaa mestariveikkaus
+            </Link>
+          </div>
+        </div>
+
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Kierrokset</h2>
           <button
