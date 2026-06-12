@@ -265,18 +265,18 @@ export default function LeaderboardPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">#</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Pelaaja</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      <span className="inline-flex items-center gap-2">
-                        Pisteet
+                      <span className="inline-flex items-center justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setIsPointsInfoOpen(true)}
-                          className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-sm font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:h-11 sm:w-11 sm:text-[11px]"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:h-7 sm:w-7"
                           aria-label="Näytä pisteiden laskentasäännöt"
                         >
-                          <svg aria-hidden="true" className="h-4 w-4 sm:h-3 sm:w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8h.01M11 12h1v4h1m-1 6a10 10 0 100-20 10 10 0 000 20z" />
                           </svg>
                         </button>
+                        Pisteet
                       </span>
                     </th>
                   </tr>
