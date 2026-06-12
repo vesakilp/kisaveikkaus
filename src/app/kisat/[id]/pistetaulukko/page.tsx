@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 interface LeaderboardEntry {
@@ -210,6 +210,8 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<{ userId: number; displayName: string } | null>(null);
+  const [isPointsInfoOpen, setIsPointsInfoOpen] = useState(false);
+  const pointsDialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetch(`/api/competitions/${competitionId}/leaderboard`)
@@ -221,6 +223,11 @@ export default function LeaderboardPage() {
       .catch(() => setError("Pistetaulukkoa ei voitu ladata. Yritä päivittää sivu."))
       .finally(() => setLoading(false));
   }, [competitionId]);
+
+  useEffect(() => {
+    if (!isPointsInfoOpen) return;
+    pointsDialogRef.current?.focus();
+  }, [isPointsInfoOpen]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -257,7 +264,21 @@ export default function LeaderboardPage() {
                   <tr className="border-b border-gray-100 bg-gray-50">
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">#</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Pelaaja</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Pisteet</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <span className="inline-flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsPointsInfoOpen(true)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:h-7 sm:w-7"
+                          aria-label="Näytä pisteiden laskentasäännöt"
+                        >
+                          <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8h.01M11 12h1v4h1m-1 6a10 10 0 100-20 10 10 0 000 20z" />
+                          </svg>
+                        </button>
+                        Pisteet
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,6 +319,66 @@ export default function LeaderboardPage() {
           displayName={selectedPlayer.displayName}
           onClose={() => setSelectedPlayer(null)}
         />
+      )}
+
+      {isPointsInfoOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={() => setIsPointsInfoOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pisteiden määräytyminen"
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl sm:p-6"
+            ref={pointsDialogRef}
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "Tab") {
+                const focusables = pointsDialogRef.current?.querySelectorAll<HTMLElement>(
+                  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+                );
+                if (!focusables || focusables.length === 0) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+
+                if (e.shiftKey && document.activeElement === first) {
+                  e.preventDefault();
+                  last.focus();
+                  return;
+                }
+
+                if (!e.shiftKey && document.activeElement === last) {
+                  e.preventDefault();
+                  first.focus();
+                }
+              }
+              if (e.key !== "Escape") return;
+              e.stopPropagation();
+              setIsPointsInfoOpen(false);
+            }}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">Miten pisteet määräytyvät?</h2>
+              <button
+                type="button"
+                onClick={() => setIsPointsInfoOpen(false)}
+                className="text-2xl leading-none text-gray-400 transition-colors hover:text-gray-600"
+                aria-label="Sulje"
+              >
+                &times;
+              </button>
+            </div>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li>• Oikea 1X2-tulos (kotivoitto/tasapeli/vierasvoitto): 1 piste</li>
+              <li>• Oikea kotijoukkueen maalimäärä: 1 piste</li>
+              <li>• Oikea vierasjoukkueen maalimäärä: 1 piste</li>
+              <li>• Bonus, jos molemmat maalimäärät oikein: +1 piste</li>
+            </ul>
+            <p className="mt-3 text-sm font-medium text-gray-800">Maksimissaan 4 pistettä per ottelu.</p>
+          </div>
+        </div>
       )}
     </div>
   );
