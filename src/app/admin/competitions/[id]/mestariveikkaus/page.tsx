@@ -45,6 +45,20 @@ function optionsToText(options: ChampionOption[]) {
   return options.map((option) => option.name).join("\n");
 }
 
+function mapCompetitionResponse(data: CompetitionResponse) {
+  return {
+    competition: data,
+    form: data.championBet
+      ? {
+          bettingStart: toDatetimeLocalInFinland(data.championBet.bettingStart),
+          bettingEnd: toDatetimeLocalInFinland(data.championBet.bettingEnd),
+          optionsText: optionsToText(data.championBet.options),
+        }
+      : emptyForm,
+    winnerId: data.championBet?.resolvedOptionId ? String(data.championBet.resolvedOptionId) : "",
+  };
+}
+
 export default function ChampionBetAdminPage() {
   const params = useParams();
   const id = params.id as string;
@@ -59,39 +73,39 @@ export default function ChampionBetAdminPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const { confirm, dialog } = useConfirm();
 
-  const loadCompetition = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await fetch(`/api/competitions/${id}/champion-bet`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Mestariveikkausta ei voitu ladata");
-      }
-
-      setCompetition(data);
-      setForm(
-        data.championBet
-          ? {
-              bettingStart: toDatetimeLocalInFinland(data.championBet.bettingStart),
-              bettingEnd: toDatetimeLocalInFinland(data.championBet.bettingEnd),
-              optionsText: optionsToText(data.championBet.options),
-            }
-          : emptyForm
-      );
-      setWinnerId(data.championBet?.resolvedOptionId ? String(data.championBet.resolvedOptionId) : "");
-    } catch (loadError) {
-      setCompetition(null);
-      setError(loadError instanceof Error ? loadError.message : "Mestariveikkausta ei voitu ladata");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    void loadCompetition();
+    let cancelled = false;
+
+    fetch(`/api/competitions/${id}/champion-bet`)
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error ?? "Mestariveikkausta ei voitu ladata");
+        }
+
+        return data as CompetitionResponse;
+      })
+      .then((data) => {
+        if (cancelled) return;
+
+        const mapped = mapCompetitionResponse(data);
+        setCompetition(mapped.competition);
+        setForm(mapped.form);
+        setWinnerId(mapped.winnerId);
+      })
+      .catch((loadError) => {
+        if (cancelled) return;
+        setCompetition(null);
+        setError(loadError instanceof Error ? loadError.message : "Mestariveikkausta ei voitu ladata");
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const optionCount = useMemo(() => {
