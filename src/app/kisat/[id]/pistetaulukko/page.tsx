@@ -210,6 +210,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<{ userId: number; displayName: string } | null>(null);
+  const [isPointsInfoOpen, setIsPointsInfoOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/competitions/${competitionId}/leaderboard`)
@@ -257,7 +258,19 @@ export default function LeaderboardPage() {
                   <tr className="border-b border-gray-100 bg-gray-50">
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">#</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Pelaaja</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Pisteet</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <span className="inline-flex items-center gap-2">
+                        Pisteet
+                        <button
+                          type="button"
+                          onClick={() => setIsPointsInfoOpen(true)}
+                          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                          aria-label="Näytä pisteiden laskentasäännöt"
+                        >
+                          i
+                        </button>
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,6 +311,41 @@ export default function LeaderboardPage() {
           displayName={selectedPlayer.displayName}
           onClose={() => setSelectedPlayer(null)}
         />
+      )}
+
+      {isPointsInfoOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={() => setIsPointsInfoOpen(false)}
+          onKeyDown={(e) => e.key === "Escape" && setIsPointsInfoOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pisteiden määräytyminen"
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">Miten pisteet määräytyvät?</h2>
+              <button
+                type="button"
+                onClick={() => setIsPointsInfoOpen(false)}
+                className="text-2xl leading-none text-gray-400 transition-colors hover:text-gray-600"
+                aria-label="Sulje"
+              >
+                &times;
+              </button>
+            </div>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li>• Oikea 1X2-tulos (kotivoitto/tasapeli/vierasvoitto): 1 piste</li>
+              <li>• Oikea kotijoukkueen maalimäärä: 1 piste</li>
+              <li>• Oikea vierasjoukkueen maalimäärä: 1 piste</li>
+              <li>• Bonus, jos molemmat maalimäärät oikein: +1 piste</li>
+            </ul>
+            <p className="mt-3 text-sm font-medium text-gray-800">Maksimissaan 4 pistettä per ottelu.</p>
+          </div>
+        </div>
       )}
     </div>
   );
