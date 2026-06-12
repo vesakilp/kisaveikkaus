@@ -317,7 +317,12 @@ export default function LeaderboardPage() {
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
           onClick={() => setIsPointsInfoOpen(false)}
-          onKeyDown={(e) => e.key === "Escape" && setIsPointsInfoOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key !== "Escape") return;
+            e.stopPropagation();
+            setIsPointsInfoOpen(false);
+          }}
+          tabIndex={0}
         >
           <div
             role="dialog"
