@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 interface LeaderboardEntry {
@@ -211,6 +211,7 @@ export default function LeaderboardPage() {
   const [error, setError] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<{ userId: number; displayName: string } | null>(null);
   const [isPointsInfoOpen, setIsPointsInfoOpen] = useState(false);
+  const pointsDialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetch(`/api/competitions/${competitionId}/leaderboard`)
@@ -222,6 +223,11 @@ export default function LeaderboardPage() {
       .catch(() => setError("Pistetaulukkoa ei voitu ladata. Yritä päivittää sivu."))
       .finally(() => setLoading(false));
   }, [competitionId]);
+
+  useEffect(() => {
+    if (!isPointsInfoOpen) return;
+    pointsDialogRef.current?.focus();
+  }, [isPointsInfoOpen]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -264,10 +270,12 @@ export default function LeaderboardPage() {
                         <button
                           type="button"
                           onClick={() => setIsPointsInfoOpen(true)}
-                          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                          className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-sm font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:h-11 sm:w-11 sm:text-[11px]"
                           aria-label="Näytä pisteiden laskentasäännöt"
                         >
-                          i
+                          <svg aria-hidden="true" className="h-4 w-4 sm:h-3 sm:w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8h.01M11 12h1v4h1m-1 6a10 10 0 100-20 10 10 0 000 20z" />
+                          </svg>
                         </button>
                       </span>
                     </th>
@@ -323,8 +331,29 @@ export default function LeaderboardPage() {
             aria-modal="true"
             aria-label="Pisteiden määräytyminen"
             className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl sm:p-6"
+            ref={pointsDialogRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
+              if (e.key === "Tab") {
+                const focusables = pointsDialogRef.current?.querySelectorAll<HTMLElement>(
+                  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+                );
+                if (!focusables || focusables.length === 0) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+
+                if (e.shiftKey && document.activeElement === first) {
+                  e.preventDefault();
+                  last.focus();
+                  return;
+                }
+
+                if (!e.shiftKey && document.activeElement === last) {
+                  e.preventDefault();
+                  first.focus();
+                }
+              }
               if (e.key !== "Escape") return;
               e.stopPropagation();
               setIsPointsInfoOpen(false);
