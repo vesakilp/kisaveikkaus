@@ -317,12 +317,6 @@ export default function LeaderboardPage() {
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
           onClick={() => setIsPointsInfoOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key !== "Escape") return;
-            e.stopPropagation();
-            setIsPointsInfoOpen(false);
-          }}
-          tabIndex={0}
         >
           <div
             role="dialog"
@@ -330,6 +324,11 @@ export default function LeaderboardPage() {
             aria-label="Pisteiden määräytyminen"
             className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl sm:p-6"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key !== "Escape") return;
+              e.stopPropagation();
+              setIsPointsInfoOpen(false);
+            }}
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <h2 className="text-lg font-semibold text-gray-900">Miten pisteet määräytyvät?</h2>
