@@ -32,9 +32,17 @@ interface PlayerPredictionsRound {
   matchPairs: MatchPairPrediction[];
 }
 
+interface ChampionBetInfo {
+  prediction: { optionId: number; optionName: string } | null;
+  earnedPoints: number;
+  maxPoints: number;
+  isResolved: boolean;
+}
+
 interface PlayerPredictionsData {
   user: { id: number; displayName: string };
   competition: { id: number; name: string };
+  championBet: ChampionBetInfo | null;
   rounds: PlayerPredictionsRound[];
 }
 
@@ -114,10 +122,58 @@ function PlayerPredictionsPanel({
             <p className="py-8 text-center text-gray-400">Ladataan…</p>
           ) : error ? (
             <p className="py-8 text-center text-sm text-red-500">{error}</p>
-          ) : !data || data.rounds.length === 0 ? (
-            <p className="py-8 text-center text-gray-400">Ei veikkauksia päätetyistä otteluista</p>
+          ) : !data || (data.rounds.length === 0 && !data.championBet) ? (
+            <p className="py-8 text-center text-gray-400">Ei veikkauksia</p>
           ) : (
             <div className="space-y-5">
+              {/* Champion betting section - show first if exists */}
+              {data.championBet && (
+                <div>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Mestariveikkaus
+                  </h3>
+                  <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-gray-900">Kisan voittaja</span>
+                      {data.championBet.isResolved && (
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          data.championBet.earnedPoints > 0
+                            ? "bg-green-50 text-green-700"
+                            : "bg-gray-50 text-gray-600"
+                        }`}>
+                          {data.championBet.earnedPoints > 0
+                            ? `${data.championBet.earnedPoints} ${data.championBet.earnedPoints === 1 ? "piste" : "pistettä"}`
+                            : `0 / ${data.championBet.maxPoints} pistettä`
+                          }
+                        </span>
+                      )}
+                      {!data.championBet.isResolved && data.championBet.prediction && (
+                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                          {data.championBet.maxPoints} {data.championBet.maxPoints === 1 ? "piste" : "pistettä"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      {data.championBet.prediction ? (
+                        <div className={`rounded-lg border px-3 py-2 text-center text-sm font-medium ${
+                          data.championBet.isResolved
+                            ? data.championBet.earnedPoints > 0
+                              ? "border-green-400 bg-green-50 text-green-800"
+                              : "border-gray-300 bg-gray-50 text-gray-600"
+                            : "border-blue-300 bg-blue-50 text-blue-800"
+                        }`}>
+                          {data.championBet.prediction.optionName}
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-center text-sm text-gray-400">
+                          Ei veikkausta
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {data.rounds.map((round) => (
                 <div key={round.id}>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">{round.name}</h3>

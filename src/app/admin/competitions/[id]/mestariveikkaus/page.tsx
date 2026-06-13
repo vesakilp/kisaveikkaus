@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { formatDateTimeInFinland, toDatetimeLocalInFinland } from "@/lib/timezone";
+import { toDatetimeLocalInFinland } from "@/lib/timezone";
 
 interface ChampionOption {
   id: number;
@@ -29,21 +29,23 @@ interface CompetitionResponse {
   championBet: ChampionBet | null;
 }
 
+interface OptionFormItem {
+  id: number | null; // null for new options
+  name: string;
+  tempId: string; // for React keys
+}
+
 interface FormState {
   bettingStart: string;
   bettingEnd: string;
-  optionsText: string;
+  options: OptionFormItem[];
 }
 
 const emptyForm: FormState = {
   bettingStart: "",
   bettingEnd: "",
-  optionsText: "",
+  options: [],
 };
-
-function optionsToText(options: ChampionOption[]) {
-  return options.map((option) => option.name).join("\n");
-}
 
 function mapCompetitionResponse(data: CompetitionResponse) {
   return {
@@ -52,10 +54,14 @@ function mapCompetitionResponse(data: CompetitionResponse) {
       ? {
           bettingStart: toDatetimeLocalInFinland(data.championBet.bettingStart),
           bettingEnd: toDatetimeLocalInFinland(data.championBet.bettingEnd),
-          optionsText: optionsToText(data.championBet.options),
+          options: data.championBet.options.map((opt) => ({
+            id: opt.id,
+            name: opt.name,
+            tempId: `existing-${opt.id}`,
+          })),
         }
       : emptyForm,
-    winnerId: data.championBet?.resolvedOptionId ? String(data.championBet.resolvedOptionId) : "",
+    winnerId: data.championBet?.resolvedOptionId ?? null,
   };
 }
 
@@ -65,13 +71,13 @@ export default function ChampionBetAdminPage() {
 
   const [competition, setCompetition] = useState<CompetitionResponse | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [winnerId, setWinnerId] = useState("");
+  const [winnerId, setWinnerId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [savingWinner, setSavingWinner] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const { confirm, dialog } = useConfirm();
+  const [nextTempId, setNextTempId] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,17 +114,39 @@ export default function ChampionBetAdminPage() {
     };
   }, [id]);
 
-  const optionCount = useMemo(() => {
-    return form.optionsText
-      .split("\n")
-      .map((option) => option.trim())
-      .filter(Boolean).length;
-  }, [form.optionsText]);
+  const addOption = () => {
+    setForm((prev) => ({
+      ...prev,
+      options: [...prev.options, { id: null, name: "", tempId: `new-${nextTempId}` }],
+    }));
+    setNextTempId((prev) => prev + 1);
+  };
+
+  const updateOption = (tempId: string, name: string) => {
+    setForm((prev) => ({
+      ...prev,
+      options: prev.options.map((opt) => (opt.tempId === tempId ? { ...opt, name } : opt)),
+    }));
+  };
+
+  const removeOption = (tempId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      options: prev.options.filter((opt) => opt.tempId !== tempId),
+    }));
+  };
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
     setSuccessMessage("");
+
+    const optionNames = form.options.map((opt) => opt.name.trim()).filter(Boolean);
+    
+    if (optionNames.length < 2) {
+      setError("Lisää vähintään kaksi vaihtoehtoa");
+      return;
+    }
 
     const isNew = !competition?.championBet;
     const ok = await confirm(
@@ -136,10 +164,7 @@ export default function ChampionBetAdminPage() {
         body: JSON.stringify({
           bettingStart: form.bettingStart,
           bettingEnd: form.bettingEnd,
-          options: form.optionsText
-            .split("\n")
-            .map((option) => option.trim())
-            .filter(Boolean),
+          options: optionNames,
         }),
       });
       const data = await response.json();
@@ -152,9 +177,13 @@ export default function ChampionBetAdminPage() {
       setForm({
         bettingStart: toDatetimeLocalInFinland(data.bettingStart),
         bettingEnd: toDatetimeLocalInFinland(data.bettingEnd),
-        optionsText: optionsToText(data.options),
+        options: data.options.map((opt: ChampionOption) => ({
+          id: opt.id,
+          name: opt.name,
+          tempId: `existing-${opt.id}`,
+        })),
       });
-      setWinnerId(data.resolvedOptionId ? String(data.resolvedOptionId) : "");
+      setWinnerId(data.resolvedOptionId ?? null);
       setSuccessMessage(isNew ? "Mestariveikkaus luotiin." : "Mestariveikkaus päivitettiin.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Tallennus epäonnistui");
@@ -163,13 +192,13 @@ export default function ChampionBetAdminPage() {
     }
   };
 
-  const handleSaveWinner = async () => {
+  const handleSetWinner = async (optionId: number | null) => {
     if (!competition?.championBet) return;
 
     setError("");
     setSuccessMessage("");
 
-    const selectedOption = competition.championBet.options.find((option) => String(option.id) === winnerId);
+    const selectedOption = optionId ? competition.championBet.options.find((option) => option.id === optionId) : null;
     const ok = await confirm(
       "Tallenna voittaja",
       selectedOption
@@ -178,13 +207,13 @@ export default function ChampionBetAdminPage() {
     );
     if (!ok) return;
 
-    setSavingWinner(true);
+    setSaving(true);
 
     try {
       const response = await fetch(`/api/competitions/${id}/champion-bet`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resolvedOptionId: winnerId ? Number(winnerId) : null }),
+        body: JSON.stringify({ resolvedOptionId: optionId }),
       });
       const data = await response.json();
 
@@ -193,12 +222,12 @@ export default function ChampionBetAdminPage() {
       }
 
       setCompetition((prev) => (prev ? { ...prev, championBet: data } : prev));
-      setWinnerId(data.resolvedOptionId ? String(data.resolvedOptionId) : "");
+      setWinnerId(data.resolvedOptionId ?? null);
       setSuccessMessage(selectedOption ? "Oikea voittaja tallennettiin." : "Oikea voittaja poistettiin.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Voittajan tallennus epäonnistui");
     } finally {
-      setSavingWinner(false);
+      setSaving(false);
     }
   };
 
@@ -229,7 +258,7 @@ export default function ChampionBetAdminPage() {
 
       setCompetition((prev) => (prev ? { ...prev, championBet: null } : prev));
       setForm(emptyForm);
-      setWinnerId("");
+      setWinnerId(null);
       setSuccessMessage("Mestariveikkaus poistettiin.");
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Poisto epäonnistui");
@@ -345,22 +374,82 @@ export default function ChampionBetAdminPage() {
           </div>
 
           <div className="mt-4">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Vaihtoehdot</label>
-            <textarea
-              value={form.optionsText}
-              onChange={(event) => setForm((prev) => ({ ...prev, optionsText: event.target.value }))}
-              rows={10}
-              placeholder={"Suomi\nRuotsi\nSaksa"}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-              required
-            />
-            <div className="mt-2 flex flex-col gap-1 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-              <span>Kirjoita yksi vaihtoehto per rivi.</span>
-              <span>{optionCount} vaihtoehtoa</span>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700">Vaihtoehdot</label>
+              <span className="text-xs text-gray-500">{form.options.filter(opt => opt.name.trim()).length} vaihtoehtoa</span>
             </div>
+            
+            <div className="space-y-2">
+              {form.options.map((option, index) => (
+                <div key={option.tempId} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={option.name}
+                    onChange={(e) => updateOption(option.tempId, e.target.value)}
+                    placeholder={`Vaihtoehto ${index + 1}`}
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                    disabled={!!(competition.championBet && competition.championBet._count.predictions > 0)}
+                  />
+                  
+                  {competition.championBet && option.id && (
+                    <button
+                      type="button"
+                      onClick={() => handleSetWinner(winnerId === option.id ? null : option.id)}
+                      disabled={saving || !option.name.trim()}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        winnerId === option.id
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                      title={winnerId === option.id ? "Poista voittaja" : "Aseta voittajaksi"}
+                    >
+                      {winnerId === option.id ? (
+                        <>
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Voittaja
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Valitse
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
+                  <button
+                    type="button"
+                    onClick={() => removeOption(option.tempId)}
+                    disabled={!!(competition.championBet && competition.championBet._count.predictions > 0)}
+                    className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Poista vaihtoehto"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={addOption}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Lisää vaihtoehto
+            </button>
+
             {competition.championBet && competition.championBet._count.predictions > 0 && (
               <p className="mt-2 text-xs text-amber-700">
-                Vaihtoehtojen nimiä ei voi enää muuttaa, koska käyttäjät ovat jo veikanneet.
+                Vaihtoehtojen nimiä ei voi enää muuttaa eikä poistaa, koska käyttäjät ovat jo veikanneet.
               </p>
             )}
           </div>
@@ -376,59 +465,29 @@ export default function ChampionBetAdminPage() {
           </div>
         </form>
 
-        {competition.championBet && (
-          <>
-            <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="text-lg font-semibold text-gray-900">Nykyinen tila</h2>
-              <dl className="mt-4 space-y-3 text-sm text-gray-600">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <dt className="font-medium text-gray-900">Veikkausaika</dt>
-                  <dd>
-                    {formatDateTimeInFinland(competition.championBet.bettingStart)} –{" "}
-                    {formatDateTimeInFinland(competition.championBet.bettingEnd)}
-                  </dd>
-                </div>
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <dt className="font-medium text-gray-900">Oikea voittaja</dt>
-                  <dd>{competition.championBet.resolvedOption?.name ?? "Ei asetettu"}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="text-lg font-semibold text-gray-900">Aseta voittaja</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Kun kisa on päättynyt, valitse oikea voittaja ja pistetaulukko laskee 10 lisäpistettä oikeille veikkauksille.
-              </p>
-
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="flex-1">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Voittajavaihtoehto</label>
-                  <select
-                    value={winnerId}
-                    onChange={(event) => setWinnerId(event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                  >
-                    <option value="">Ei voittajaa</option>
-                    {competition.championBet.options.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSaveWinner}
-                  disabled={savingWinner}
-                  className="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                >
-                  {savingWinner ? "Tallennetaan…" : "Tallenna voittaja"}
-                </button>
+        {competition.championBet && winnerId && (
+          <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm sm:p-6">
+            <div className="flex items-start gap-3">
+              <svg className="h-6 w-6 flex-shrink-0 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-green-900">Voittaja asetettu</h3>
+                <p className="mt-1 text-sm text-green-700">
+                  <span className="font-medium">{competition.championBet.resolvedOption?.name}</span> on valittu oikeaksi voittajaksi. 
+                  Pistetaulukko laskee 10 lisäpistettä oikeille veikkauksille.
+                </p>
               </div>
             </div>
-          </>
+          </div>
+        )}
+
+        {competition.championBet && !competition.championBet.options.length && (
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm sm:p-6">
+            <p className="text-sm text-amber-800">
+              Lisää vaihtoehtoja yllä olevaan lomakkeeseen ja tallenna.
+            </p>
+          </div>
         )}
       </main>
     </div>

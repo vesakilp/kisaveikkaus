@@ -47,7 +47,7 @@ export default function Navigation() {
     if (!user) return [];
 
     return [
-      { href: "/kisat", label: "Kisat" },
+      { href: "/", label: "Kisat" },
       ...(user.isAdmin
         ? [
             { href: "/admin", label: "Hallintapaneeli" },
