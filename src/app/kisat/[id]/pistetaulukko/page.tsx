@@ -178,7 +178,7 @@ function PlayerPredictionsPanel({
                 <div key={round.id}>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">{round.name}</h3>
                   <div className="space-y-2">
-                    {round.matchPairs.map((mp) => {
+                    {round.matchPairs.sort((a, b) => b.matchDate.localeCompare(a.matchDate)).map((mp) => {
                       const pts = mp.points;
                       const predHome = mp.prediction?.homeScore ?? null;
                       const predAway = mp.prediction?.awayScore ?? null;
