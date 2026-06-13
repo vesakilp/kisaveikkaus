@@ -31,6 +31,31 @@ export async function GET(
     select: {
       id: true,
       name: true,
+      championBet: {
+        select: {
+          id: true,
+          points: true,
+          resolvedOptionId: true,
+          options: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          predictions: {
+            where: { userId: targetUserId },
+            select: {
+              optionId: true,
+              option: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
       rounds: {
         orderBy: { createdAt: "asc" },
         select: {
@@ -95,9 +120,36 @@ export async function GET(
     }))
     .filter((r) => r.matchPairs.length > 0);
 
+  // Calculate champion bet points
+  let championBet: {
+    prediction: { optionId: number; optionName: string } | null;
+    earnedPoints: number;
+    maxPoints: number;
+    isResolved: boolean;
+  } | null = null;
+
+  if (competition.championBet) {
+    const cb = competition.championBet;
+    const userPrediction = cb.predictions[0] ?? null;
+    const isResolved = cb.resolvedOptionId !== null;
+    const earnedPoints = isResolved && userPrediction && userPrediction.optionId === cb.resolvedOptionId
+      ? cb.points
+      : 0;
+
+    championBet = {
+      prediction: userPrediction
+        ? { optionId: userPrediction.optionId, optionName: userPrediction.option.name }
+        : null,
+      earnedPoints,
+      maxPoints: cb.points,
+      isResolved,
+    };
+  }
+
   return NextResponse.json({
     user: { id: user.id, displayName: user.displayName },
     competition: { id: competition.id, name: competition.name },
+    championBet,
     rounds,
   });
 }

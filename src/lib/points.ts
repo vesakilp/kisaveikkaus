@@ -62,3 +62,12 @@ export function calculatePoints(
 
   return { total, outcome, homeGoals, awayGoals, bothGoals };
 }
+
+export function calculateChampionPoints(
+  predictedOptionId: number | null | undefined,
+  resolvedOptionId: number | null | undefined,
+  points: number
+) {
+  if (predictedOptionId == null || resolvedOptionId == null) return 0;
+  return predictedOptionId === resolvedOptionId ? points : 0;
+}

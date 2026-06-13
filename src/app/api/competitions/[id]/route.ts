@@ -13,6 +13,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           matchPairs: { select: { matchDate: true } },
         },
       },
+      championBet: {
+        select: {
+          id: true,
+          bettingStart: true,
+          bettingEnd: true,
+          points: true,
+          options: {
+            orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+            select: { id: true, name: true, sortOrder: true },
+          },
+        },
+      },
     },
   });
   if (!competition) return NextResponse.json({ error: "Ei löydy" }, { status: 404 });
