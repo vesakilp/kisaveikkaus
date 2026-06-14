@@ -63,11 +63,17 @@ function PlayerPredictionsPanel({
   userId,
   displayName,
   onClose,
+  players,
+  currentIndex,
+  onNavigate,
 }: {
   competitionId: string;
   userId: number;
   displayName: string;
   onClose: () => void;
+  players: { userId: number; displayName: string }[];
+  currentIndex: number;
+  onNavigate: (index: number) => void;
 }) {
   const [data, setData] = useState<PlayerPredictionsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,7 +111,29 @@ function PlayerPredictionsPanel({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
-          <h2 className="font-bold text-gray-900">{displayName} – veikkaukset</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onNavigate(currentIndex - 1)}
+              disabled={currentIndex <= 0}
+              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+              aria-label="Edellinen pelaaja"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={() => onNavigate(currentIndex + 1)}
+              disabled={currentIndex >= players.length - 1}
+              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+              aria-label="Seuraava pelaaja"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          <h2 className="flex-1 truncate px-2 text-center font-bold text-gray-900">{displayName} – veikkaukset</h2>
           <button
             onClick={onClose}
             className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
@@ -266,6 +294,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<{ userId: number; displayName: string } | null>(null);
+  const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number>(0);
   const [isPointsInfoOpen, setIsPointsInfoOpen] = useState(false);
   const pointsDialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -352,7 +381,10 @@ export default function LeaderboardPage() {
                           <button
                             className="font-medium text-gray-900 underline-offset-2 hover:text-blue-600 hover:underline"
                             aria-describedby="leaderboard-hint"
-                            onClick={() => setSelectedPlayer({ userId: entry.userId, displayName: entry.displayName })}
+                            onClick={() => {
+                              setSelectedPlayer({ userId: entry.userId, displayName: entry.displayName });
+                              setSelectedPlayerIndex(index);
+                            }}
                           >
                             {entry.displayName}
                           </button>
@@ -368,12 +400,21 @@ export default function LeaderboardPage() {
         )}
       </main>
 
-      {selectedPlayer && (
+      {selectedPlayer && data && (
         <PlayerPredictionsPanel
           competitionId={competitionId}
           userId={selectedPlayer.userId}
           displayName={selectedPlayer.displayName}
           onClose={() => setSelectedPlayer(null)}
+          players={data.leaderboard}
+          currentIndex={selectedPlayerIndex}
+          onNavigate={(index) => {
+            const player = data.leaderboard[index];
+            if (player) {
+              setSelectedPlayer({ userId: player.userId, displayName: player.displayName });
+              setSelectedPlayerIndex(index);
+            }
+          }}
         />
       )}
 
