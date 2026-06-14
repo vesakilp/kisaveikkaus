@@ -295,6 +295,14 @@ export default function LeaderboardPage() {
   const [error, setError] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<{ userId: number; displayName: string } | null>(null);
   const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number>(0);
+
+  const selectPlayerAtIndex = (index: number) => {
+    if (!data) return;
+    const player = data.leaderboard[index];
+    if (!player) return;
+    setSelectedPlayer({ userId: player.userId, displayName: player.displayName });
+    setSelectedPlayerIndex(index);
+  };
   const [isPointsInfoOpen, setIsPointsInfoOpen] = useState(false);
   const pointsDialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -381,10 +389,7 @@ export default function LeaderboardPage() {
                           <button
                             className="font-medium text-gray-900 underline-offset-2 hover:text-blue-600 hover:underline"
                             aria-describedby="leaderboard-hint"
-                            onClick={() => {
-                              setSelectedPlayer({ userId: entry.userId, displayName: entry.displayName });
-                              setSelectedPlayerIndex(index);
-                            }}
+                            onClick={() => selectPlayerAtIndex(index)}
                           >
                             {entry.displayName}
                           </button>
@@ -408,13 +413,7 @@ export default function LeaderboardPage() {
           onClose={() => setSelectedPlayer(null)}
           players={data.leaderboard}
           currentIndex={selectedPlayerIndex}
-          onNavigate={(index) => {
-            const player = data.leaderboard[index];
-            if (player) {
-              setSelectedPlayer({ userId: player.userId, displayName: player.displayName });
-              setSelectedPlayerIndex(index);
-            }
-          }}
+          onNavigate={(index) => selectPlayerAtIndex(index)}
         />
       )}
 
