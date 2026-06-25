@@ -8,7 +8,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     include: {
       rounds: {
         orderBy: { createdAt: "asc" },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          bettingStart: true,
           _count: { select: { matchPairs: true } },
           matchPairs: { select: { matchDate: true } },
         },

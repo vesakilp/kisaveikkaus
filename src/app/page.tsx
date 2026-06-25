@@ -39,7 +39,9 @@ export default async function Home() {
         where: {
           matchPairs: { some: { matchDate: { gt: new Date() } } },
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
           _count: { select: { matchPairs: true } },
         },
       },

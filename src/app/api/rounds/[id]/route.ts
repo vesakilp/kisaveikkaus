@@ -1,13 +1,40 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const round = await prisma.round.findUnique({
-    where: { id: Number(id) },
-    include: { matchPairs: { orderBy: { matchDate: "asc" } }, competition: true },
-  });
+  let round = null;
+
+  try {
+    round = await prisma.round.findUnique({
+      where: { id: Number(id) },
+      include: { matchPairs: { orderBy: { matchDate: "asc" } }, competition: true },
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022")) {
+      throw error;
+    }
+
+    const fallbackRound = await prisma.round.findUnique({
+      where: { id: Number(id) },
+      select: {
+        id: true,
+        name: true,
+        bettingStart: true,
+        bettingEnd: true,
+        competitionId: true,
+        createdAt: true,
+        updatedAt: true,
+        matchPairs: { orderBy: { matchDate: "asc" } },
+        competition: true,
+      },
+    });
+
+    round = fallbackRound ? { ...fallbackRound, additionalInfo: null } : null;
+  }
+
   if (!round) return NextResponse.json({ error: "Ei löydy" }, { status: 404 });
   return NextResponse.json(round);
 }

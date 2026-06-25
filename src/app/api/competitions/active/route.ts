@@ -12,7 +12,11 @@ export async function GET() {
     include: {
       rounds: {
         orderBy: { createdAt: "asc" },
-        include: { _count: { select: { matchPairs: true } } },
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { matchPairs: true } },
+        },
       },
     },
     orderBy: { createdAt: "desc" },

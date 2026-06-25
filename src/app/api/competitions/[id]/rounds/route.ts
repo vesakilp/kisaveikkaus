@@ -7,7 +7,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const rounds = await prisma.round.findMany({
     where: { competitionId: Number(id) },
     orderBy: { createdAt: "asc" },
-    include: { _count: { select: { matchPairs: true } } },
+    select: {
+      id: true,
+      name: true,
+      bettingStart: true,
+      _count: { select: { matchPairs: true } },
+    },
   });
   return NextResponse.json(rounds);
 }

@@ -33,6 +33,7 @@ export default function CompetitionPage() {
   const [showRoundForm, setShowRoundForm] = useState(false);
   const [roundForm, setRoundForm] = useState(emptyRound);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [editRoundId, setEditRoundId] = useState<number | null>(null);
   const [editRound, setEditRound] = useState(emptyRound);
   const [refreshCount, setRefreshCount] = useState(0);
@@ -41,8 +42,12 @@ export default function CompetitionPage() {
 
   useEffect(() => {
     fetch(`/api/competitions/${id}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Kisaa ei voitu ladata");
+        return r.json();
+      })
       .then((data) => setCompetition(data))
+      .catch(() => setError("Kisaa ei voitu ladata. Yritä päivittää sivu."))
       .finally(() => setLoading(false));
   }, [id, refreshCount]);
 
@@ -96,6 +101,10 @@ export default function CompetitionPage() {
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-gray-400">Ladataan…</p></div>;
+  }
+
+  if (error) {
+    return <div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-red-500">{error}</p></div>;
   }
 
   if (!competition) {
