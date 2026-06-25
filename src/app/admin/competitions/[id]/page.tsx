@@ -9,6 +9,7 @@ import { formatDateTimeInFinland, toDatetimeLocalInFinland } from "@/lib/timezon
 interface Round {
   id: number;
   name: string;
+  additionalInfo: string | null;
   bettingStart: string;
   _count: { matchPairs: number };
 }
@@ -19,7 +20,7 @@ interface Competition {
   rounds: Round[];
 }
 
-const emptyRound = { name: "", bettingStart: "" };
+const emptyRound = { name: "", additionalInfo: "", bettingStart: "" };
 
 export default function CompetitionPage() {
   const params = useParams();
@@ -191,6 +192,15 @@ export default function CompetitionPage() {
                   required
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Lisätieto (valinnainen)</label>
+                <textarea
+                  value={roundForm.additionalInfo}
+                  onChange={(e) => setRoundForm({ ...roundForm, additionalInfo: e.target.value })}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                />
+              </div>
             </div>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
@@ -226,6 +236,15 @@ export default function CompetitionPage() {
                         <input type="datetime-local" value={editRound.bettingStart} onChange={(e) => setEditRound({ ...editRound, bettingStart: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
                       </div>
                     </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-500">Lisätieto (valinnainen)</label>
+                      <textarea
+                        value={editRound.additionalInfo}
+                        onChange={(e) => setEditRound({ ...editRound, additionalInfo: e.target.value })}
+                        rows={3}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                      />
+                    </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <button onClick={() => handleSaveRound(round.id)} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm text-white transition-colors hover:bg-blue-700 sm:w-auto">Tallenna</button>
                       <button onClick={() => setEditRoundId(null)} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto">Peruuta</button>
@@ -244,7 +263,7 @@ export default function CompetitionPage() {
                       <Link href={`/admin/competitions/${id}/rounds/${round.id}`} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:w-auto">
                         Avaa
                       </Link>
-                      <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, bettingStart: toDatetimeLocalInFinland(round.bettingStart) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
+                      <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, additionalInfo: round.additionalInfo ?? "", bettingStart: toDatetimeLocalInFinland(round.bettingStart) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
                         Muokkaa
                       </button>
                       <button onClick={() => handleDeleteRound(round.id, round.name)} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 sm:w-auto">

@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name, bettingStart } = await request.json();
+  const { name, bettingStart, additionalInfo } = await request.json();
   const parsedBettingStart = parseDateTimeInput(bettingStart);
 
   if (!name?.trim() || !parsedBettingStart) {
@@ -22,7 +22,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
   const round = await prisma.round.update({
     where: { id: Number(id) },
-    data: { name: name.trim(), bettingStart: parsedBettingStart, bettingEnd: parsedBettingStart },
+    data: {
+      name: name.trim(),
+      additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
+      bettingStart: parsedBettingStart,
+      bettingEnd: parsedBettingStart,
+    },
   });
   return NextResponse.json(round);
 }
