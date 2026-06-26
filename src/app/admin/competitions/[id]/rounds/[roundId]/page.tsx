@@ -48,6 +48,7 @@ export default function RoundPage() {
   const [resultMatchId, setResultMatchId] = useState<number | null>(null);
   const [resultForm, setResultForm] = useState({ actualHomeScore: "", actualAwayScore: "" });
   const [savingResult, setSavingResult] = useState(false);
+  const [matchFormError, setMatchFormError] = useState("");
 
   const [hideFinished, setHideFinished] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -71,6 +72,23 @@ export default function RoundPage() {
 
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMatchFormError("");
+
+    if (!matchForm.homeTeam.trim()) {
+      setMatchFormError("Kotijoukkueen nimi on pakollinen");
+      return;
+    }
+
+    if (!matchForm.awayTeam.trim()) {
+      setMatchFormError("Vierasjoukkueen nimi on pakollinen");
+      return;
+    }
+
+    if (!matchForm.matchDate) {
+      setMatchFormError("Ottelun alkamisaika on pakollinen");
+      return;
+    }
+
     const ok = await confirm("Lisää ottelu", `Lisätäänkö ottelu ${matchForm.homeTeam} – ${matchForm.awayTeam}?`);
     if (!ok) return;
     setSaving(true);
@@ -204,7 +222,7 @@ export default function RoundPage() {
               ℹ️ JSON-ohje
             </button>
             <button
-              onClick={() => setShowMatchForm(true)}
+              onClick={() => { setShowMatchForm(true); setMatchFormError(""); }}
               className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:w-auto"
             >
               + Lisää ottelu
@@ -219,8 +237,13 @@ export default function RoundPage() {
         )}
 
         {showMatchForm && (
-          <form onSubmit={handleAddMatch} className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <form onSubmit={handleAddMatch} noValidate className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
             <h3 className="mb-4 text-base font-semibold text-gray-900">Lisää ottelu</h3>
+            {matchFormError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {matchFormError}
+              </div>
+            )}
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">Kotijoukkue</label>
@@ -231,7 +254,6 @@ export default function RoundPage() {
                   onChange={(e) => setMatchForm({ ...matchForm, homeTeam: e.target.value })}
                   placeholder="Esim. Suomi"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                  required
                 />
               </div>
               <div>
@@ -242,7 +264,6 @@ export default function RoundPage() {
                   onChange={(e) => setMatchForm({ ...matchForm, awayTeam: e.target.value })}
                   placeholder="Esim. Ruotsi"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                  required
                 />
               </div>
             </div>
@@ -252,15 +273,14 @@ export default function RoundPage() {
                 type="datetime-local"
                 value={matchForm.matchDate}
                 onChange={(e) => setMatchForm({ ...matchForm, matchDate: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:w-auto"
-                required
+               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:w-auto"
               />
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                 {saving ? "Tallennetaan…" : "Tallenna"}
               </button>
-              <button type="button" onClick={() => { setShowMatchForm(false); setMatchForm(emptyMatch); }} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto">
+              <button type="button" onClick={() => { setShowMatchForm(false); setMatchForm(emptyMatch); setMatchFormError(""); }} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto">
                 Peruuta
               </button>
             </div>
