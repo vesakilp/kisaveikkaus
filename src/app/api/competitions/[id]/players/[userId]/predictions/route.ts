@@ -130,20 +130,23 @@ export async function GET(
 
   if (competition.championBet) {
     const cb = competition.championBet;
-    const userPrediction = cb.predictions[0] ?? null;
     const isResolved = cb.resolvedOptionId !== null;
-    const earnedPoints = isResolved && userPrediction && userPrediction.optionId === cb.resolvedOptionId
-      ? cb.points
-      : 0;
 
-    championBet = {
-      prediction: userPrediction
-        ? { optionId: userPrediction.optionId, optionName: userPrediction.option.name }
-        : null,
-      earnedPoints,
-      maxPoints: cb.points,
-      isResolved,
-    };
+    if (isResolved) {
+      const userPrediction = cb.predictions[0] ?? null;
+      const earnedPoints = userPrediction && userPrediction.optionId === cb.resolvedOptionId
+        ? cb.points
+        : 0;
+
+      championBet = {
+        prediction: userPrediction
+          ? { optionId: userPrediction.optionId, optionName: userPrediction.option.name }
+          : null,
+        earnedPoints,
+        maxPoints: cb.points,
+        isResolved,
+      };
+    }
   }
 
   return NextResponse.json({
