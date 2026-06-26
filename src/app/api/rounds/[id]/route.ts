@@ -47,8 +47,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!name?.trim() || !parsedBettingStart) {
     return NextResponse.json({ error: "Kierroksen nimi ja veikkauksen alkamisaika ovat pakollisia" }, { status: 400 });
   }
-  try {
-    const round = await prisma.round.update({
+  const updateRound = () =>
+    prisma.round.update({
       where: { id: Number(id) },
       data: {
         name: name.trim(),
@@ -57,13 +57,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         bettingEnd: parsedBettingStart,
       },
     });
+
+  try {
+    const round = await updateRound();
     return NextResponse.json(round);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
-      return NextResponse.json(
-        { error: "Tietokannasta puuttuu lisätietokenttä. Päivitä tietokanta (prisma db push) ja yritä uudelleen." },
-        { status: 500 },
-      );
+      try {
+        await prisma.$executeRaw`ALTER TABLE "Round" ADD COLUMN IF NOT EXISTS "additionalInfo" TEXT`;
+        const round = await updateRound();
+        return NextResponse.json(round);
+      } catch {
+        return NextResponse.json(
+          { error: "Lisätietokenttää ei voitu luoda automaattisesti. Päivitä tietokanta (prisma db push) ja yritä uudelleen." },
+          { status: 500 },
+        );
+      }
     }
     throw error;
   }
