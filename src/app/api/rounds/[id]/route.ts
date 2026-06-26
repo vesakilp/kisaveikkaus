@@ -47,16 +47,26 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!name?.trim() || !parsedBettingStart) {
     return NextResponse.json({ error: "Kierroksen nimi ja veikkauksen alkamisaika ovat pakollisia" }, { status: 400 });
   }
-  const round = await prisma.round.update({
-    where: { id: Number(id) },
-    data: {
-      name: name.trim(),
-      additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
-      bettingStart: parsedBettingStart,
-      bettingEnd: parsedBettingStart,
-    },
-  });
-  return NextResponse.json(round);
+  try {
+    const round = await prisma.round.update({
+      where: { id: Number(id) },
+      data: {
+        name: name.trim(),
+        additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
+        bettingStart: parsedBettingStart,
+        bettingEnd: parsedBettingStart,
+      },
+    });
+    return NextResponse.json(round);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+      return NextResponse.json(
+        { error: "Tietokannasta puuttuu lisätietokenttä. Päivitä tietokanta (prisma db push) ja yritä uudelleen." },
+        { status: 500 },
+      );
+    }
+    throw error;
+  }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {

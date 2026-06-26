@@ -1,35 +1,76 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { NextResponse } from "next/server";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const competition = await prisma.competition.findUnique({
-    where: { id: Number(id) },
-    include: {
-      rounds: {
-        orderBy: { createdAt: "asc" },
-        select: {
-          id: true,
-          name: true,
-          bettingStart: true,
-          _count: { select: { matchPairs: true } },
-          matchPairs: { select: { matchDate: true } },
+  let competition = null;
+
+  try {
+    competition = await prisma.competition.findUnique({
+      where: { id: Number(id) },
+      include: {
+        rounds: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            name: true,
+            additionalInfo: true,
+            bettingStart: true,
+            _count: { select: { matchPairs: true } },
+            matchPairs: { select: { matchDate: true } },
+          },
         },
-      },
-      championBet: {
-        select: {
-          id: true,
-          bettingStart: true,
-          bettingEnd: true,
-          points: true,
-          options: {
-            orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-            select: { id: true, name: true, sortOrder: true },
+        championBet: {
+          select: {
+            id: true,
+            bettingStart: true,
+            bettingEnd: true,
+            points: true,
+            options: {
+              orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+              select: { id: true, name: true, sortOrder: true },
+            },
           },
         },
       },
-    },
-  });
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022")) {
+      throw error;
+    }
+    competition = await prisma.competition.findUnique({
+      where: { id: Number(id) },
+      include: {
+        rounds: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            name: true,
+            bettingStart: true,
+            _count: { select: { matchPairs: true } },
+            matchPairs: { select: { matchDate: true } },
+          },
+        },
+        championBet: {
+          select: {
+            id: true,
+            bettingStart: true,
+            bettingEnd: true,
+            points: true,
+            options: {
+              orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+              select: { id: true, name: true, sortOrder: true },
+            },
+          },
+        },
+      },
+    });
+    competition = competition
+      ? { ...competition, rounds: competition.rounds.map((round) => ({ ...round, additionalInfo: null })) }
+      : null;
+  }
+
   if (!competition) return NextResponse.json({ error: "Ei löydy" }, { status: 404 });
   return NextResponse.json(competition);
 }

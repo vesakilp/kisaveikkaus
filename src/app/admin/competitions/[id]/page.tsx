@@ -68,26 +68,42 @@ export default function CompetitionPage() {
     e.preventDefault();
     const ok = await confirm("Luo kierros", `Luodaanko kierros "${roundForm.name}"?`);
     if (!ok) return;
+    setError("");
     setSaving(true);
-    await fetch(`/api/competitions/${id}/rounds`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(roundForm),
-    });
-    setRoundForm(emptyRound);
-    setShowRoundForm(false);
-    setSaving(false);
-    refresh();
+    try {
+      const res = await fetch(`/api/competitions/${id}/rounds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(roundForm),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Kierroksen tallennus epäonnistui");
+      }
+      setRoundForm(emptyRound);
+      setShowRoundForm(false);
+      refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kierroksen tallennus epäonnistui");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSaveRound = async (roundId: number) => {
     const ok = await confirm("Muokkaa kierrosta", `Tallennetaanko muutokset kierrokselle "${editRound.name}"?`);
     if (!ok) return;
-    await fetch(`/api/rounds/${roundId}`, {
+    setError("");
+    const res = await fetch(`/api/rounds/${roundId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(editRound),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Kierroksen tallennus epäonnistui");
+      return;
+    }
     setEditRoundId(null);
     refresh();
   };
