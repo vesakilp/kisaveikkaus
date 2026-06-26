@@ -18,6 +18,7 @@ interface MatchPair {
 interface Round {
   id: number;
   name: string;
+  additionalInfo: string | null;
   matchPairs: MatchPair[];
   competition: { id: number; name: string };
 }
@@ -282,6 +283,9 @@ export default function RoundPredictionPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{round.name}</h1>
+            {round.additionalInfo && (
+              <p className="mt-1 text-sm text-gray-600 whitespace-pre-line">{round.additionalInfo}</p>
+            )}
             <p className="mt-0.5 text-sm text-gray-500">
               Veikkaus on avoinna ottelukohtaisesti ottelun alkuun asti Suomen ajan mukaan.
             </p>

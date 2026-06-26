@@ -32,6 +32,7 @@ model Competition {
 model Round {
   id            Int         @id @default(autoincrement())
   name          String
+  additionalInfo String?
   bettingStart  DateTime
   bettingEnd    DateTime
   competitionId Int

@@ -9,6 +9,7 @@ import { formatDateTimeInFinland, toDatetimeLocalInFinland } from "@/lib/timezon
 interface Round {
   id: number;
   name: string;
+  additionalInfo: string | null;
   bettingStart: string;
   _count: { matchPairs: number };
 }
@@ -19,7 +20,7 @@ interface Competition {
   rounds: Round[];
 }
 
-const emptyRound = { name: "", bettingStart: "" };
+const emptyRound = { name: "", additionalInfo: "", bettingStart: "" };
 
 export default function CompetitionPage() {
   const params = useParams();
@@ -32,6 +33,7 @@ export default function CompetitionPage() {
   const [showRoundForm, setShowRoundForm] = useState(false);
   const [roundForm, setRoundForm] = useState(emptyRound);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [editRoundId, setEditRoundId] = useState<number | null>(null);
   const [editRound, setEditRound] = useState(emptyRound);
   const [refreshCount, setRefreshCount] = useState(0);
@@ -40,8 +42,12 @@ export default function CompetitionPage() {
 
   useEffect(() => {
     fetch(`/api/competitions/${id}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Kisaa ei voitu ladata");
+        return r.json();
+      })
       .then((data) => setCompetition(data))
+      .catch(() => setError("Kisaa ei voitu ladata. Yritä päivittää sivu."))
       .finally(() => setLoading(false));
   }, [id, refreshCount]);
 
@@ -62,26 +68,42 @@ export default function CompetitionPage() {
     e.preventDefault();
     const ok = await confirm("Luo kierros", `Luodaanko kierros "${roundForm.name}"?`);
     if (!ok) return;
+    setError("");
     setSaving(true);
-    await fetch(`/api/competitions/${id}/rounds`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(roundForm),
-    });
-    setRoundForm(emptyRound);
-    setShowRoundForm(false);
-    setSaving(false);
-    refresh();
+    try {
+      const res = await fetch(`/api/competitions/${id}/rounds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(roundForm),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Kierroksen tallennus epäonnistui");
+      }
+      setRoundForm(emptyRound);
+      setShowRoundForm(false);
+      refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kierroksen tallennus epäonnistui");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSaveRound = async (roundId: number) => {
     const ok = await confirm("Muokkaa kierrosta", `Tallennetaanko muutokset kierrokselle "${editRound.name}"?`);
     if (!ok) return;
-    await fetch(`/api/rounds/${roundId}`, {
+    setError("");
+    const res = await fetch(`/api/rounds/${roundId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(editRound),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Kierroksen tallennus epäonnistui");
+      return;
+    }
     setEditRoundId(null);
     refresh();
   };
@@ -95,6 +117,10 @@ export default function CompetitionPage() {
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-gray-400">Ladataan…</p></div>;
+  }
+
+  if (error) {
+    return <div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-red-500">{error}</p></div>;
   }
 
   if (!competition) {
@@ -191,6 +217,15 @@ export default function CompetitionPage() {
                   required
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Lisätieto (valinnainen)</label>
+                <textarea
+                  value={roundForm.additionalInfo ?? ""}
+                  onChange={(e) => setRoundForm({ ...roundForm, additionalInfo: e.target.value })}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                />
+              </div>
             </div>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
@@ -226,6 +261,15 @@ export default function CompetitionPage() {
                         <input type="datetime-local" value={editRound.bettingStart} onChange={(e) => setEditRound({ ...editRound, bettingStart: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
                       </div>
                     </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-500">Lisätieto (valinnainen)</label>
+                      <textarea
+                        value={editRound.additionalInfo ?? ""}
+                        onChange={(e) => setEditRound({ ...editRound, additionalInfo: e.target.value })}
+                        rows={3}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                      />
+                    </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <button onClick={() => handleSaveRound(round.id)} className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm text-white transition-colors hover:bg-blue-700 sm:w-auto">Tallenna</button>
                       <button onClick={() => setEditRoundId(null)} className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto">Peruuta</button>
@@ -244,7 +288,7 @@ export default function CompetitionPage() {
                       <Link href={`/admin/competitions/${id}/rounds/${round.id}`} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:w-auto">
                         Avaa
                       </Link>
-                      <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, bettingStart: toDatetimeLocalInFinland(round.bettingStart) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
+                      <button onClick={() => { setEditRoundId(round.id); setEditRound({ name: round.name, additionalInfo: round.additionalInfo ?? "", bettingStart: toDatetimeLocalInFinland(round.bettingStart) }); }} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
                         Muokkaa
                       </button>
                       <button onClick={() => handleDeleteRound(round.id, round.name)} className="inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 sm:w-auto">

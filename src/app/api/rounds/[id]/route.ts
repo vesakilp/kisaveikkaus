@@ -1,30 +1,82 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const round = await prisma.round.findUnique({
-    where: { id: Number(id) },
-    include: { matchPairs: { orderBy: { matchDate: "asc" } }, competition: true },
-  });
+  let round = null;
+
+  try {
+    round = await prisma.round.findUnique({
+      where: { id: Number(id) },
+      include: { matchPairs: { orderBy: { matchDate: "asc" } }, competition: true },
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022")) {
+      throw error;
+    }
+
+    const fallbackRound = await prisma.round.findUnique({
+      where: { id: Number(id) },
+      select: {
+        id: true,
+        name: true,
+        bettingStart: true,
+        bettingEnd: true,
+        competitionId: true,
+        createdAt: true,
+        updatedAt: true,
+        matchPairs: { orderBy: { matchDate: "asc" } },
+        competition: true,
+      },
+    });
+
+    round = fallbackRound ? { ...fallbackRound, additionalInfo: null } : null;
+  }
+
   if (!round) return NextResponse.json({ error: "Ei löydy" }, { status: 404 });
   return NextResponse.json(round);
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name, bettingStart } = await request.json();
+  const { name, bettingStart, additionalInfo } = await request.json();
   const parsedBettingStart = parseDateTimeInput(bettingStart);
 
   if (!name?.trim() || !parsedBettingStart) {
     return NextResponse.json({ error: "Kierroksen nimi ja veikkauksen alkamisaika ovat pakollisia" }, { status: 400 });
   }
-  const round = await prisma.round.update({
-    where: { id: Number(id) },
-    data: { name: name.trim(), bettingStart: parsedBettingStart, bettingEnd: parsedBettingStart },
-  });
-  return NextResponse.json(round);
+  const updateRound = () =>
+    prisma.round.update({
+      where: { id: Number(id) },
+      data: {
+        name: name.trim(),
+        additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
+        bettingStart: parsedBettingStart,
+        bettingEnd: parsedBettingStart,
+      },
+    });
+
+  try {
+    const round = await updateRound();
+    return NextResponse.json(round);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+      try {
+        await prisma.$executeRaw`ALTER TABLE "Round" ADD COLUMN IF NOT EXISTS "additionalInfo" TEXT`;
+        const round = await updateRound();
+        return NextResponse.json(round);
+      } catch (migrationError) {
+        console.error("Round.additionalInfo column auto-create failed", migrationError);
+        return NextResponse.json(
+          { error: "Lisätietokenttää ei voitu luoda automaattisesti. Päivitä tietokanta (prisma db push) ja yritä uudelleen." },
+          { status: 500 },
+        );
+      }
+    }
+    throw error;
+  }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
