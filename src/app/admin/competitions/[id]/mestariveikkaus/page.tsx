@@ -141,6 +141,16 @@ export default function ChampionBetAdminPage() {
     setError("");
     setSuccessMessage("");
 
+    if (!form.bettingStart) {
+      setError("Veikkauksen alkamisaika on pakollinen");
+      return;
+    }
+
+    if (!form.bettingEnd) {
+      setError("Veikkauksen päättymisaika on pakollinen");
+      return;
+    }
+
     const optionNames = form.options.map((opt) => opt.name.trim()).filter(Boolean);
     
     if (optionNames.length < 2) {
@@ -327,7 +337,7 @@ export default function ChampionBetAdminPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <form onSubmit={handleSave} noValidate className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -357,7 +367,6 @@ export default function ChampionBetAdminPage() {
                 value={form.bettingStart}
                 onChange={(event) => setForm((prev) => ({ ...prev, bettingStart: event.target.value }))}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                required
               />
             </div>
 
@@ -368,7 +377,6 @@ export default function ChampionBetAdminPage() {
                 value={form.bettingEnd}
                 onChange={(event) => setForm((prev) => ({ ...prev, bettingEnd: event.target.value }))}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                required
               />
             </div>
           </div>
