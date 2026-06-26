@@ -220,7 +220,7 @@ export default function CompetitionPage() {
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">Lisätieto (valinnainen)</label>
                 <textarea
-                  value={roundForm.additionalInfo}
+                  value={roundForm.additionalInfo ?? ""}
                   onChange={(e) => setRoundForm({ ...roundForm, additionalInfo: e.target.value })}
                   rows={3}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
@@ -264,7 +264,7 @@ export default function CompetitionPage() {
                     <div>
                       <label className="mb-1 block text-xs text-gray-500">Lisätieto (valinnainen)</label>
                       <textarea
-                        value={editRound.additionalInfo}
+                        value={editRound.additionalInfo ?? ""}
                         onChange={(e) => setEditRound({ ...editRound, additionalInfo: e.target.value })}
                         rows={3}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
