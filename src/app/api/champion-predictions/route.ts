@@ -29,11 +29,11 @@ export async function POST(request: Request) {
   }
 
   const now = new Date();
-  if (now < new Date(championBet.bettingStart)) {
+  if (now < championBet.bettingStart) {
     return NextResponse.json({ error: "Veikkaus ei ole vielä alkanut" }, { status: 400 });
   }
 
-  if (now > new Date(championBet.bettingEnd)) {
+  if (now > championBet.bettingEnd) {
     return NextResponse.json({ error: "Veikkausaika on päättynyt" }, { status: 400 });
   }
 

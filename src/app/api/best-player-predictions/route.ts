@@ -29,11 +29,11 @@ export async function POST(request: Request) {
   }
 
   const now = new Date();
-  if (now < new Date(bestPlayerBet.bettingStart)) {
+  if (now < bestPlayerBet.bettingStart) {
     return NextResponse.json({ error: "Veikkaus ei ole vielä alkanut" }, { status: 400 });
   }
 
-  if (now > new Date(bestPlayerBet.bettingEnd)) {
+  if (now > bestPlayerBet.bettingEnd) {
     return NextResponse.json({ error: "Veikkausaika on päättynyt" }, { status: 400 });
   }
 
