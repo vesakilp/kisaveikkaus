@@ -8,25 +8,27 @@ datasource db {
 }
 
 model User {
-  id                  Int                  @id @default(autoincrement())
-  email               String               @unique
-  passwordHash        String
-  displayName         String
-  isAdmin             Boolean              @default(false)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  predictions         Prediction[]
-  championPredictions ChampionPrediction[]
-  passwordResetTokens PasswordResetToken[]
+  id                      Int                      @id @default(autoincrement())
+  email                   String                   @unique
+  passwordHash            String
+  displayName             String
+  isAdmin                 Boolean                  @default(false)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  predictions             Prediction[]
+  championPredictions     ChampionPrediction[]
+  bestPlayerPredictions   BestPlayerPrediction[]
+  passwordResetTokens     PasswordResetToken[]
 }
 
 model Competition {
-  id         Int         @id @default(autoincrement())
-  name       String
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  rounds     Round[]
-  championBet ChampionBet?
+  id              Int               @id @default(autoincrement())
+  name            String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  rounds          Round[]
+  championBet     ChampionBet?
+  bestPlayerBet   BestPlayerBet?
 }
 
 model Round {
@@ -130,4 +132,52 @@ model PasswordResetToken {
   @@index([userId])
   @@index([expiresAt])
   @@index([userId, usedAt, expiresAt])
+}
+
+model BestPlayerBet {
+  id               Int                   @id @default(autoincrement())
+  competitionId    Int                   @unique
+  competition      Competition           @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  bettingStart     DateTime
+  bettingEnd       DateTime
+  points           Int                   @default(10)
+  resolvedOptionId Int?
+  resolvedOption   BestPlayerOption?     @relation("ResolvedBestPlayerOption", fields: [resolvedOptionId], references: [id], onDelete: SetNull)
+  options          BestPlayerOption[]    @relation("BestPlayerBetOptions")
+  predictions      BestPlayerPrediction[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([bettingStart, bettingEnd])
+}
+
+model BestPlayerOption {
+  id                       Int                    @id @default(autoincrement())
+  bestPlayerBetId          Int
+  bestPlayerBet            BestPlayerBet          @relation("BestPlayerBetOptions", fields: [bestPlayerBetId], references: [id], onDelete: Cascade)
+  name                     String
+  sortOrder                Int                    @default(0)
+  predictions              BestPlayerPrediction[]
+  resolvedForBestPlayerBet BestPlayerBet[]        @relation("ResolvedBestPlayerOption")
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+
+  @@unique([bestPlayerBetId, name])
+  @@index([bestPlayerBetId, sortOrder])
+}
+
+model BestPlayerPrediction {
+  id              Int              @id @default(autoincrement())
+  userId          Int
+  bestPlayerBetId Int
+  optionId        Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bestPlayerBet   BestPlayerBet    @relation(fields: [bestPlayerBetId], references: [id], onDelete: Cascade)
+  option          BestPlayerOption @relation(fields: [optionId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([userId, bestPlayerBetId])
+  @@index([bestPlayerBetId])
+  @@index([optionId])
 }

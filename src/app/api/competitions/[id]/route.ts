@@ -33,6 +33,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             },
           },
         },
+        bestPlayerBet: {
+          select: {
+            id: true,
+            bettingStart: true,
+            bettingEnd: true,
+            points: true,
+            options: {
+              orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+              select: { id: true, name: true, sortOrder: true },
+            },
+          },
+        },
       },
     });
   } catch (error) {
@@ -53,6 +65,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           },
         },
         championBet: {
+          select: {
+            id: true,
+            bettingStart: true,
+            bettingEnd: true,
+            points: true,
+            options: {
+              orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+              select: { id: true, name: true, sortOrder: true },
+            },
+          },
+        },
+        bestPlayerBet: {
           select: {
             id: true,
             bettingStart: true,

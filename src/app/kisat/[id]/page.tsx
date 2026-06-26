@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import ChampionBetting from "@/components/ChampionBetting";
+import BestPlayerBetting from "@/components/BestPlayerBetting";
 
 interface Round {
   id: number;
@@ -95,6 +96,9 @@ export default function CompetitionPage() {
           <div className="space-y-6">
             {/* Mestariveikkaus */}
             <ChampionBetting competitionId={competitionId} />
+
+            {/* Paras pelaaja -veikkaus */}
+            <BestPlayerBetting competitionId={competitionId} />
 
             {/* Pistetaulukko linkki */}
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
