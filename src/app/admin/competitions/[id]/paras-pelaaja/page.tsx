@@ -275,6 +275,8 @@ export default function BestPlayerBetAdminPage() {
     return <div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-red-500">Kisaa ei löydy</p></div>;
   }
 
+  const validOptionCount = form.options.filter(opt => opt.name.trim()).length;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {dialog}
@@ -376,9 +378,8 @@ export default function BestPlayerBetAdminPage() {
           <div className="mt-4">
             <div className="mb-2 flex items-center justify-between">
               <label className="block text-sm font-medium text-gray-700">Pelaajat</label>
-              <span className="text-xs text-gray-500">{form.options.filter(opt => opt.name.trim()).length} pelaajaa</span>
+              <span className="text-xs text-gray-500">{validOptionCount} pelaajaa</span>
             </div>
-
             <div className="space-y-2">
               {form.options.map((option, index) => (
                 <div key={option.tempId} className="flex items-center gap-2">
@@ -401,7 +402,7 @@ export default function BestPlayerBetAdminPage() {
                           ? "bg-green-600 text-white hover:bg-green-700"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
-                      title={winnerId === option.id ? "Poista paras pelaaja" : "Aseta parhaaksi pelajaksi"}
+                      title={winnerId === option.id ? "Poista paras pelaaja" : "Aseta parhaaksi pelaajaksi"}
                     >
                       {winnerId === option.id ? (
                         <>
