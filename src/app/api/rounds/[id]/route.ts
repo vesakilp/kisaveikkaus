@@ -67,7 +67,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         await prisma.$executeRaw`ALTER TABLE "Round" ADD COLUMN IF NOT EXISTS "additionalInfo" TEXT`;
         const round = await updateRound();
         return NextResponse.json(round);
-      } catch {
+      } catch (migrationError) {
+        console.error("Round.additionalInfo column auto-create failed", migrationError);
         return NextResponse.json(
           { error: "Lisätietokenttää ei voitu luoda automaattisesti. Päivitä tietokanta (prisma db push) ja yritä uudelleen." },
           { status: 500 },
