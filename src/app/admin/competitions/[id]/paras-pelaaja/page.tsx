@@ -136,8 +136,7 @@ export default function BestPlayerBetAdminPage() {
     }));
   };
 
-  const handleSave = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSave = async () => {
     setError("");
     setSuccessMessage("");
 
@@ -339,7 +338,7 @@ export default function BestPlayerBetAdminPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSave} noValidate className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -465,14 +464,15 @@ export default function BestPlayerBetAdminPage() {
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <button
-              type="submit"
+              type="button"
+              onClick={handleSave}
               disabled={saving}
               className="inline-flex w-full items-center justify-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {saving ? "Tallennetaan…" : competition.bestPlayerBet ? "Tallenna muutokset" : "Luo paras pelaaja -veikkaus"}
             </button>
           </div>
-        </form>
+        </div>
 
         {competition.bestPlayerBet && winnerId && (
           <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm sm:p-6">
