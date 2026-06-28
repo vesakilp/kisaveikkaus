@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getChampionBetPoints } from "@/lib/champion-bet";
 import { calculateChampionPoints, calculatePoints } from "@/lib/points";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -102,7 +103,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       totals[prediction.userId].points += calculateChampionPoints(
         prediction.optionId,
         competition.championBet.resolvedOptionId,
-        competition.championBet.points
+        getChampionBetPoints()
       );
     }
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getChampionBetPoints } from "@/lib/champion-bet";
 
 interface ChampionOption {
   id: number;
@@ -165,7 +166,7 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">Veikkaa kisan voittaja</h3>
           <p className="mt-1 text-sm text-gray-700">
-            Veikkaa kuka voittaa kisan ja saa {championBet.points} lisäpistettä oikeasta veikkauksesta! 
+            Veikkaa kuka voittaa kisan ja saa {getChampionBetPoints()} lisäpistettä oikeasta veikkauksesta! 
             Veikkausaika päättyy {bettingEnd.toLocaleDateString("fi-FI", {
               day: "numeric",
               month: "numeric",

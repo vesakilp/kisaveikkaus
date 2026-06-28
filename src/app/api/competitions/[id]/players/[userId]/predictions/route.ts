@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
+import { getChampionBetPoints } from "@/lib/champion-bet";
 import { calculatePoints } from "@/lib/points";
 
 export async function GET(
@@ -135,7 +136,7 @@ export async function GET(
     if (isResolved) {
       const userPrediction = cb.predictions[0] ?? null;
       const earnedPoints = userPrediction && userPrediction.optionId === cb.resolvedOptionId
-        ? cb.points
+        ? getChampionBetPoints()
         : 0;
 
       championBet = {
@@ -143,7 +144,7 @@ export async function GET(
           ? { optionId: userPrediction.optionId, optionName: userPrediction.option.name }
           : null,
         earnedPoints,
-        maxPoints: cb.points,
+        maxPoints: getChampionBetPoints(),
         isResolved,
       };
     }
