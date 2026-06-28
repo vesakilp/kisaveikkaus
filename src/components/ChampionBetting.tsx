@@ -34,6 +34,7 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -51,6 +52,9 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
         if (predData.prediction) {
           setPrediction(predData.prediction);
           setSelectedOptionId(predData.prediction.optionId);
+          setIsExpanded(false);
+        } else {
+          setIsExpanded(true);
         }
       })
       .catch(() => {
@@ -85,6 +89,7 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
 
       setPrediction(data);
       setSuccessMessage("Veikkaus tallennettu!");
+      setIsExpanded(false);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Veikkauksen tallennus epäonnistui");
@@ -102,7 +107,6 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
   const bettingEnd = new Date(championBet.bettingEnd);
   const isBeforeStart = now < bettingStart;
   const isAfterEnd = now > bettingEnd;
-  const isOpen = !isBeforeStart && !isAfterEnd;
 
   if (isBeforeStart) {
     return (
@@ -158,14 +162,36 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
   }
 
   return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm sm:p-6">
-      <div className="flex items-start gap-3">
+    <div className="rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((v) => !v)}
+        className="flex w-full items-center gap-3 p-5 text-left sm:p-6"
+      >
         <svg className="h-6 w-6 flex-shrink-0 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">Veikkaa kisan voittaja</h3>
-          <p className="mt-1 text-sm text-gray-700">
+          {prediction && (
+            <p className="mt-0.5 text-sm text-gray-700">
+              Veikkauksesi: <span className="font-semibold">{prediction.option.name}</span>
+            </p>
+          )}
+        </div>
+        <svg
+          className={`h-5 w-5 flex-shrink-0 text-gray-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isExpanded && (
+        <div className="border-t border-amber-200 px-5 pb-5 sm:px-6 sm:pb-6">
+          <p className="mt-4 text-sm text-gray-700">
             Veikkaa kuka voittaa kisan ja saa {getChampionBetPoints()} lisäpistettä oikeasta veikkauksesta! 
             Veikkausaika päättyy {bettingEnd.toLocaleDateString("fi-FI", {
               day: "numeric",
@@ -225,7 +251,7 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
             </button>
           </form>
         </div>
-      </div>
+      )}
     </div>
   );
 }
