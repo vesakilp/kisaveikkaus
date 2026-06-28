@@ -1,9 +1,8 @@
 import { requireAdmin } from "@/lib/auth/session";
+import { DEFAULT_CHAMPION_POINTS } from "@/lib/champion-bet";
 import { prisma } from "@/lib/prisma";
 import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
-
-const DEFAULT_CHAMPION_POINTS = 5;
 
 function normalizeOptionNames(input: unknown) {
   if (!Array.isArray(input)) return [];

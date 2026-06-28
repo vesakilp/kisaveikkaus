@@ -76,7 +76,7 @@ model ChampionBet {
   competition      Competition         @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   bettingStart     DateTime
   bettingEnd       DateTime
-  points           Int                 @default(10)
+  points           Int                 @default(5)
   resolvedOptionId Int?
   resolvedOption   ChampionOption?     @relation("ResolvedChampionOption", fields: [resolvedOptionId], references: [id], onDelete: SetNull)
   options          ChampionOption[]    @relation("ChampionBetOptions")
