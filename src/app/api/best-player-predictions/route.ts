@@ -10,49 +10,49 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { championBetId, optionId } = body;
+  const { bestPlayerBetId, optionId } = body;
 
-  if (!championBetId || !optionId) {
+  if (!bestPlayerBetId || !optionId) {
     return NextResponse.json({ error: "Puuttuvat tiedot" }, { status: 400 });
   }
 
-  // Check if champion bet exists and is active
-  const championBet = await prisma.championBet.findUnique({
-    where: { id: Number(championBetId) },
+  // Check if best player bet exists and is active
+  const bestPlayerBet = await prisma.bestPlayerBet.findUnique({
+    where: { id: Number(bestPlayerBetId) },
     include: {
       options: { select: { id: true } },
     },
   });
 
-  if (!championBet) {
-    return NextResponse.json({ error: "Mestariveikkausta ei löydy" }, { status: 404 });
+  if (!bestPlayerBet) {
+    return NextResponse.json({ error: "Paras pelaaja -veikkausta ei löydy" }, { status: 404 });
   }
 
   const now = new Date();
-  if (now < championBet.bettingStart) {
+  if (now < bestPlayerBet.bettingStart) {
     return NextResponse.json({ error: "Veikkaus ei ole vielä alkanut" }, { status: 400 });
   }
 
-  if (now > championBet.bettingEnd) {
+  if (now > bestPlayerBet.bettingEnd) {
     return NextResponse.json({ error: "Veikkausaika on päättynyt" }, { status: 400 });
   }
 
   // Check if option exists
-  if (!championBet.options.some((opt) => opt.id === Number(optionId))) {
+  if (!bestPlayerBet.options.some((opt) => opt.id === Number(optionId))) {
     return NextResponse.json({ error: "Virheellinen vaihtoehto" }, { status: 400 });
   }
 
   // Upsert prediction
-  const prediction = await prisma.championPrediction.upsert({
+  const prediction = await prisma.bestPlayerPrediction.upsert({
     where: {
-      userId_championBetId: {
+      userId_bestPlayerBetId: {
         userId: session.id,
-        championBetId: Number(championBetId),
+        bestPlayerBetId: Number(bestPlayerBetId),
       },
     },
     create: {
       userId: session.id,
-      championBetId: Number(championBetId),
+      bestPlayerBetId: Number(bestPlayerBetId),
       optionId: Number(optionId),
     },
     update: {

@@ -47,33 +47,26 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!name?.trim() || !parsedBettingStart) {
     return NextResponse.json({ error: "Kierroksen nimi ja veikkauksen alkamisaika ovat pakollisia" }, { status: 400 });
   }
-  const updateRound = () =>
+  const updateRound = (withAdditionalInfo: boolean) =>
     prisma.round.update({
       where: { id: Number(id) },
       data: {
         name: name.trim(),
-        additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
+        ...(withAdditionalInfo && {
+          additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
+        }),
         bettingStart: parsedBettingStart,
         bettingEnd: parsedBettingStart,
       },
     });
 
   try {
-    const round = await updateRound();
+    const round = await updateRound(true);
     return NextResponse.json(round);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
-      try {
-        await prisma.$executeRaw`ALTER TABLE "Round" ADD COLUMN IF NOT EXISTS "additionalInfo" TEXT`;
-        const round = await updateRound();
-        return NextResponse.json(round);
-      } catch (migrationError) {
-        console.error("Round.additionalInfo column auto-create failed", migrationError);
-        return NextResponse.json(
-          { error: "Lisätietokenttää ei voitu luoda automaattisesti. Päivitä tietokanta (prisma db push) ja yritä uudelleen." },
-          { status: 500 },
-        );
-      }
+      const round = await updateRound(false);
+      return NextResponse.json({ ...round, additionalInfo: null });
     }
     throw error;
   }

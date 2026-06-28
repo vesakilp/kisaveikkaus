@@ -40,6 +40,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             },
           },
         },
+        bestPlayerBet: {
+          select: {
+            points: true,
+            resolvedOptionId: true,
+            predictions: {
+              select: {
+                userId: true,
+                optionId: true,
+              },
+            },
+          },
+        },
       },
     }),
     prisma.user.findMany({
@@ -91,6 +103,20 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         prediction.optionId,
         competition.championBet.resolvedOptionId,
         competition.championBet.points
+      );
+    }
+  }
+
+  if (competition.bestPlayerBet) {
+    for (const prediction of competition.bestPlayerBet.predictions) {
+      if (!totals[prediction.userId]) {
+        continue;
+      }
+
+      totals[prediction.userId].points += calculateChampionPoints(
+        prediction.optionId,
+        competition.bestPlayerBet.resolvedOptionId,
+        competition.bestPlayerBet.points
       );
     }
   }

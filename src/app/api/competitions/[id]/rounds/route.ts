@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
@@ -25,14 +26,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!name?.trim() || !parsedBettingStart) {
     return NextResponse.json({ error: "Kierroksen nimi ja veikkauksen alkamisaika ovat pakollisia" }, { status: 400 });
   }
-  const round = await prisma.round.create({
-    data: {
-      name: name.trim(),
-      additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
-      bettingStart: parsedBettingStart,
-      bettingEnd: parsedBettingStart,
-      competitionId: Number(id),
-    },
-  });
-  return NextResponse.json(round, { status: 201 });
+
+  const createRound = (withAdditionalInfo: boolean) =>
+    prisma.round.create({
+      data: {
+        name: name.trim(),
+        ...(withAdditionalInfo && {
+          additionalInfo: typeof additionalInfo === "string" ? additionalInfo.trim() || null : null,
+        }),
+        bettingStart: parsedBettingStart,
+        bettingEnd: parsedBettingStart,
+        competitionId: Number(id),
+      },
+    });
+
+  try {
+    const round = await createRound(true);
+    return NextResponse.json(round, { status: 201 });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+      const round = await createRound(false);
+      return NextResponse.json({ ...round, additionalInfo: null }, { status: 201 });
+    }
+    throw error;
+  }
 }

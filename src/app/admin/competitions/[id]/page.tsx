@@ -66,9 +66,20 @@ export default function CompetitionPage() {
 
   const handleCreateRound = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
+    if (!roundForm.name.trim()) {
+      setError("Kierroksen nimi on pakollinen");
+      return;
+    }
+
+    if (!roundForm.bettingStart) {
+      setError("Veikkauksen alkamisaika on pakollinen");
+      return;
+    }
+
     const ok = await confirm("Luo kierros", `Luodaanko kierros "${roundForm.name}"?`);
     if (!ok) return;
-    setError("");
     setSaving(true);
     try {
       const res = await fetch(`/api/competitions/${id}/rounds`, {
@@ -181,6 +192,23 @@ export default function CompetitionPage() {
           </div>
         </div>
 
+        <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Paras pelaaja -veikkaus</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Hallitse paras pelaaja -veikkauksen aikaa, pelaajia ja oikeaa vastausta.
+              </p>
+            </div>
+            <Link
+              href={`/admin/competitions/${id}/paras-pelaaja`}
+              className="inline-flex w-full items-center justify-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 sm:w-auto"
+            >
+              Avaa paras pelaaja
+            </Link>
+          </div>
+        </div>
+
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Kierrokset</h2>
           <button
@@ -192,7 +220,7 @@ export default function CompetitionPage() {
         </div>
 
         {showRoundForm && (
-          <form onSubmit={handleCreateRound} className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <form onSubmit={handleCreateRound} noValidate className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
             <h3 className="mb-4 text-base font-semibold text-gray-900">Uusi kierros</h3>
             <div className="space-y-4">
               <div>
@@ -204,7 +232,6 @@ export default function CompetitionPage() {
                   onChange={(e) => setRoundForm({ ...roundForm, name: e.target.value })}
                   placeholder="Esim. Alkulohko A"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                  required
                 />
               </div>
               <div>
@@ -214,7 +241,6 @@ export default function CompetitionPage() {
                   value={roundForm.bettingStart}
                   onChange={(e) => setRoundForm({ ...roundForm, bettingStart: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:w-auto"
-                  required
                 />
               </div>
               <div>
