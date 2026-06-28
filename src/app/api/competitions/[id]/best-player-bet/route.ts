@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { parseDateTimeInput } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
-const DEFAULT_BEST_PLAYER_POINTS = 10;
+const DEFAULT_BEST_PLAYER_POINTS = 5;
 
 function normalizeOptionNames(input: unknown) {
   if (!Array.isArray(input)) return [];
@@ -86,6 +86,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const bettingStart = parseDateTimeInput(body.bettingStart);
   const bettingEnd = parseDateTimeInput(body.bettingEnd);
   const options = normalizeOptionNames(body.options);
+  const pointsRaw = Number(body.points);
+  const points = Number.isInteger(pointsRaw) && pointsRaw > 0 ? pointsRaw : DEFAULT_BEST_PLAYER_POINTS;
 
   if (!bettingStart || !bettingEnd) {
     return NextResponse.json({ error: "Veikkausajan alku ja loppu ovat pakollisia" }, { status: 400 });
@@ -135,7 +137,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
           competitionId,
           bettingStart,
           bettingEnd,
-          points: DEFAULT_BEST_PLAYER_POINTS,
+          points: points,
           options: {
             create: options.map((name, index) => ({ name, sortOrder: index })),
           },
@@ -167,6 +169,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         data: {
           bettingStart,
           bettingEnd,
+          points,
         },
         include: {
           options: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
@@ -187,6 +190,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       data: {
         bettingStart,
         bettingEnd,
+        points,
         resolvedOptionId: null,
         options: {
           create: options.map((name, index) => ({ name, sortOrder: index })),

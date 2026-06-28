@@ -38,12 +38,14 @@ interface OptionFormItem {
 interface FormState {
   bettingStart: string;
   bettingEnd: string;
+  points: number;
   options: OptionFormItem[];
 }
 
 const emptyForm: FormState = {
   bettingStart: "",
   bettingEnd: "",
+  points: 5,
   options: [],
 };
 
@@ -54,6 +56,7 @@ function mapCompetitionResponse(data: CompetitionResponse) {
       ? {
           bettingStart: toDatetimeLocalInFinland(data.bestPlayerBet.bettingStart),
           bettingEnd: toDatetimeLocalInFinland(data.bestPlayerBet.bettingEnd),
+          points: data.bestPlayerBet.points,
           options: data.bestPlayerBet.options.map((opt) => ({
             id: opt.id,
             name: opt.name,
@@ -173,6 +176,7 @@ export default function BestPlayerBetAdminPage() {
         body: JSON.stringify({
           bettingStart: form.bettingStart,
           bettingEnd: form.bettingEnd,
+          points: form.points,
           options: optionNames,
         }),
       });
@@ -186,6 +190,7 @@ export default function BestPlayerBetAdminPage() {
       setForm({
         bettingStart: toDatetimeLocalInFinland(data.bettingStart),
         bettingEnd: toDatetimeLocalInFinland(data.bettingEnd),
+        points: data.points,
         options: data.options.map((opt: BestPlayerOption) => ({
           id: opt.id,
           name: opt.name,
@@ -322,7 +327,7 @@ export default function BestPlayerBetAdminPage() {
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-gray-500">Pisteet</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">10</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{competition.bestPlayerBet?.points ?? form.points}</p>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-gray-500">Vaihtoehtoja</p>
@@ -345,7 +350,7 @@ export default function BestPlayerBetAdminPage() {
                 {competition.bestPlayerBet ? "Muokkaa paras pelaaja -veikkausta" : "Luo paras pelaaja -veikkaus"}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Oikeasta veikkauksesta saa aina 10 pistettä.
+                Määritä kuinka monta pistettä oikeasta veikkauksesta saa.
               </p>
             </div>
             {competition.bestPlayerBet && (
@@ -380,6 +385,18 @@ export default function BestPlayerBetAdminPage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               />
             </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="mb-1 block text-sm font-medium text-gray-700">Pisteet oikeasta veikkauksesta</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={form.points}
+              onChange={(event) => setForm((prev) => ({ ...prev, points: Math.max(1, Number(event.target.value) || 1) }))}
+              className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+            />
           </div>
 
           <div className="mt-4">
@@ -484,7 +501,7 @@ export default function BestPlayerBetAdminPage() {
                 <h3 className="text-sm font-semibold text-green-900">Paras pelaaja asetettu</h3>
                 <p className="mt-1 text-sm text-green-700">
                   <span className="font-medium">{competition.bestPlayerBet.resolvedOption?.name}</span> on valittu kisan parhaaksi pelaajaksi.
-                  Pistetaulukko laskee 10 lisäpistettä oikeille veikkauksille.
+                  Pistetaulukko laskee {competition.bestPlayerBet.points} lisäpistettä oikeille veikkauksille.
                 </p>
               </div>
             </div>
