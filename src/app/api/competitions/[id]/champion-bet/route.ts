@@ -166,6 +166,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         data: {
           bettingStart,
           bettingEnd,
+          points: DEFAULT_CHAMPION_POINTS,
         },
         include: {
           options: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
@@ -186,6 +187,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       data: {
         bettingStart,
         bettingEnd,
+        points: DEFAULT_CHAMPION_POINTS,
         resolvedOptionId: null,
         options: {
           create: options.map((name, index) => ({ name, sortOrder: index })),
