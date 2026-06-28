@@ -321,7 +321,7 @@ export default function ChampionBetAdminPage() {
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-gray-500">Pisteet</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{competition.championBet?.points ?? DEFAULT_CHAMPION_POINTS}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{DEFAULT_CHAMPION_POINTS}</p>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-gray-500">Vaihtoehtoja</p>
@@ -344,7 +344,7 @@ export default function ChampionBetAdminPage() {
                 {competition.championBet ? "Muokkaa mestariveikkausta" : "Luo mestariveikkaus"}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Oikeasta veikkauksesta saa aina {competition?.championBet?.points ?? DEFAULT_CHAMPION_POINTS} pistettä.
+                Oikeasta veikkauksesta saa aina {DEFAULT_CHAMPION_POINTS} pistettä.
               </p>
             </div>
             {competition.championBet && (
@@ -484,7 +484,7 @@ export default function ChampionBetAdminPage() {
                 <h3 className="text-sm font-semibold text-green-900">Voittaja asetettu</h3>
                 <p className="mt-1 text-sm text-green-700">
                   <span className="font-medium">{competition.championBet.resolvedOption?.name}</span> on valittu oikeaksi voittajaksi. 
-                  Pistetaulukko laskee {competition.championBet.points ?? DEFAULT_CHAMPION_POINTS} lisäpistettä oikeille veikkauksille.
+                  Pistetaulukko laskee {DEFAULT_CHAMPION_POINTS} lisäpistettä oikeille veikkauksille.
                 </p>
               </div>
             </div>
