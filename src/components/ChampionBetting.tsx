@@ -102,8 +102,6 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
   const bettingEnd = new Date(championBet.bettingEnd);
   const isBeforeStart = now < bettingStart;
   const isAfterEnd = now > bettingEnd;
-  const isOpen = !isBeforeStart && !isAfterEnd;
-
   if (isBeforeStart) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
@@ -188,41 +186,66 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
           )}
 
           <form onSubmit={handleSubmit} className="mt-4">
-            <div className="space-y-2">
-              {championBet.options.map((option) => (
-                <label
-                  key={option.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-colors ${
-                    selectedOptionId === option.id
-                      ? "border-amber-500 bg-white"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="championOption"
-                    value={option.id}
-                    checked={selectedOptionId === option.id}
-                    onChange={() => setSelectedOptionId(option.id)}
-                    className="h-4 w-4 text-amber-600 focus:ring-2 focus:ring-amber-500"
-                  />
-                  <span className="flex-1 text-sm font-medium text-gray-900">{option.name}</span>
-                  {prediction?.optionId === option.id && (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                      Nykyinen veikkaus
-                    </span>
-                  )}
-                </label>
-              ))}
-            </div>
+            {prediction && (
+              <p className="mb-3 text-sm text-gray-900">
+                Sinun veikkauksesi: <span className="font-semibold">{prediction.option?.name ?? "Ei valintaa"}</span>
+              </p>
+            )}
 
-            <button
-              type="submit"
-              disabled={saving || !selectedOptionId}
-              className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-            >
-              {saving ? "Tallennetaan..." : prediction ? "Päivitä veikkaus" : "Tallenna veikkaus"}
-            </button>
+            <details className="group rounded-lg border border-amber-200 bg-white" open={!prediction}>
+              <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-gray-800 [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center justify-between gap-2">
+                  <span>{prediction ? "Näytä vaihtoehdot ja vaihda veikkausta" : "Näytä vaihtoehdot"}</span>
+                  <span className="sr-only group-open:hidden">Avaa vaihtoehdot</span>
+                  <span className="sr-only hidden group-open:inline">Sulje vaihtoehdot</span>
+                  <svg
+                    className="h-4 w-4 text-gray-500 transition-transform group-open:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 9-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+
+              <div className="space-y-2 border-t border-gray-100 p-3">
+                {championBet.options.map((option) => (
+                  <label
+                    key={option.id}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-colors ${
+                      selectedOptionId === option.id
+                        ? "border-amber-500 bg-white"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="championOption"
+                      value={option.id}
+                      checked={selectedOptionId === option.id}
+                      onChange={() => setSelectedOptionId(option.id)}
+                      className="h-4 w-4 text-amber-600 focus:ring-2 focus:ring-amber-500"
+                    />
+                    <span className="flex-1 text-sm font-medium text-gray-900">{option.name}</span>
+                    {prediction?.optionId === option.id && (
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                        Nykyinen veikkaus
+                      </span>
+                    )}
+                  </label>
+                ))}
+
+                <button
+                  type="submit"
+                  disabled={saving || !selectedOptionId}
+                  className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                  {saving ? "Tallennetaan..." : prediction ? "Päivitä veikkaus" : "Tallenna veikkaus"}
+                </button>
+              </div>
+            </details>
           </form>
         </div>
       </div>
