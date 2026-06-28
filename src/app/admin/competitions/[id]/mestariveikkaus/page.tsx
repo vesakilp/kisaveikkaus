@@ -312,7 +312,7 @@ export default function ChampionBetAdminPage() {
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-gray-500">Pisteet</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">10</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{competition.championBet?.points ?? DEFAULT_CHAMPION_POINTS}</p>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-gray-500">Vaihtoehtoja</p>
