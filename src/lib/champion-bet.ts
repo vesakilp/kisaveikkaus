@@ -1,0 +1,1 @@
+export const DEFAULT_CHAMPION_POINTS = 5;

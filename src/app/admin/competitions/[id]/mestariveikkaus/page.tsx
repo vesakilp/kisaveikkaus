@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { DEFAULT_CHAMPION_POINTS } from "@/lib/champion-bet";
 import { toDatetimeLocalInFinland } from "@/lib/timezone";
 
 interface ChampionOption {
@@ -334,7 +335,7 @@ export default function ChampionBetAdminPage() {
                 {competition.championBet ? "Muokkaa mestariveikkausta" : "Luo mestariveikkaus"}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Oikeasta veikkauksesta saa aina 10 pistettä.
+                Oikeasta veikkauksesta saa aina {competition?.championBet?.points ?? DEFAULT_CHAMPION_POINTS} pistettä.
               </p>
             </div>
             {competition.championBet && (
@@ -475,7 +476,7 @@ export default function ChampionBetAdminPage() {
                 <h3 className="text-sm font-semibold text-green-900">Voittaja asetettu</h3>
                 <p className="mt-1 text-sm text-green-700">
                   <span className="font-medium">{competition.championBet.resolvedOption?.name}</span> on valittu oikeaksi voittajaksi. 
-                  Pistetaulukko laskee 10 lisäpistettä oikeille veikkauksille.
+                  Pistetaulukko laskee {competition.championBet.points ?? DEFAULT_CHAMPION_POINTS} lisäpistettä oikeille veikkauksille.
                 </p>
               </div>
             </div>
