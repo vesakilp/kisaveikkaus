@@ -58,7 +58,7 @@ export async function GET(
         },
       },
       rounds: {
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           name: true,
