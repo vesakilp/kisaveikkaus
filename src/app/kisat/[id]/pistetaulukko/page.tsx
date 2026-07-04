@@ -63,6 +63,16 @@ function toCsvCell(value: string | number): string {
   return `"${text.replaceAll("\"", "\"\"")}"`;
 }
 
+function sanitizeFilenamePart(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-_\s]/gi, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+}
+
 function PlayerPredictionsPanel({
   competitionId,
   userId,
@@ -150,16 +160,10 @@ function PlayerPredictionsPanel({
     const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = downloadUrl;
-    const fileSafeDisplayName = displayName
-      .toLowerCase()
-      .replace(/[^a-z0-9-_\s]/gi, "")
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 64);
+    const fileSafeDisplayName = sanitizeFilenamePart(displayName);
     link.download = `veikkaukset-${fileSafeDisplayName || "pelaaja"}.csv`;
     link.click();
-    URL.revokeObjectURL(downloadUrl);
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1_000);
   };
 
   return (
