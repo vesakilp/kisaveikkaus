@@ -130,18 +130,34 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     );
   }
 
-  const bestPlayerBet = await prisma.$transaction(async (tx) => {
+  let bestPlayerBet;
+  try {
+    bestPlayerBet = await prisma.$transaction(async (tx) => {
     if (!competition.bestPlayerBet) {
-      return tx.bestPlayerBet.create({
+      // Create parent first without options
+      const parentBet = await tx.bestPlayerBet.create({
         data: {
           competitionId,
           bettingStart,
           bettingEnd,
           points: points,
-          options: {
-            create: options.map((name, index) => ({ name, sortOrder: index })),
-          },
         },
+      });
+      
+      // Then create options
+      for (const [index, name] of options.entries()) {
+        await tx.bestPlayerOption.create({
+          data: {
+            bestPlayerBetId: parentBet.id,
+            name,
+            sortOrder: index,
+          },
+        });
+      }
+      
+      // Finally, fetch the complete result
+      return tx.bestPlayerBet.findUnique({
+        where: { id: parentBet.id },
         include: {
           options: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
           resolvedOption: { select: { id: true, name: true } },
@@ -225,6 +241,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       },
     });
   });
+  } catch (error) {
+    console.error('Error creating bestPlayerBet:', error);
+    return NextResponse.json(
+      { error: `Tallennus epäonnistui: ${error instanceof Error ? error.message : 'Tuntematon virhe'}` },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json(bestPlayerBet);
 }
