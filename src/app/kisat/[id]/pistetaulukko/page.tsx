@@ -69,7 +69,7 @@ function toCsvCell(value: string | number): string {
 function sanitizeFilenamePart(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[^a-z0-9-_\s]/gi, "")
+    .replace(/[^a-z0-9-_\s]/g, "")
     .trim()
     .replace(/\s+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -96,6 +96,7 @@ function PlayerPredictionsPanel({
   const [data, setData] = useState<PlayerPredictionsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const revokeUrlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch(`/api/competitions/${competitionId}/players/${userId}/predictions`)
@@ -114,6 +115,13 @@ function PlayerPredictionsPanel({
       )
       .finally(() => setLoading(false));
   }, [competitionId, userId]);
+
+  useEffect(() => {
+    return () => {
+      if (!revokeUrlTimeoutRef.current) return;
+      clearTimeout(revokeUrlTimeoutRef.current);
+    };
+  }, []);
 
   const hasExportRows = Boolean(
     data?.rounds.some((round) =>
@@ -164,9 +172,11 @@ function PlayerPredictionsPanel({
     const link = document.createElement("a");
     link.href = downloadUrl;
     const fileSafeDisplayName = sanitizeFilenamePart(displayName);
-    link.download = `veikkaukset-${fileSafeDisplayName || "pelaaja"}.csv`;
+    const fallbackName = sanitizeFilenamePart("pelaaja");
+    link.download = `veikkaukset-${fileSafeDisplayName || fallbackName}.csv`;
     link.click();
-    setTimeout(() => URL.revokeObjectURL(downloadUrl), DOWNLOAD_URL_REVOKE_DELAY_MS);
+    if (revokeUrlTimeoutRef.current) clearTimeout(revokeUrlTimeoutRef.current);
+    revokeUrlTimeoutRef.current = setTimeout(() => URL.revokeObjectURL(downloadUrl), DOWNLOAD_URL_REVOKE_DELAY_MS);
   };
 
   return (
