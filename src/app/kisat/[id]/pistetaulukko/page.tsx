@@ -58,6 +58,11 @@ function scoreDisplay(score: number | null | undefined): string {
   return score !== null && score !== undefined ? String(score) : "–";
 }
 
+function toCsvCell(value: string | number): string {
+  const text = String(value);
+  return `"${text.replaceAll("\"", "\"\"")}"`;
+}
+
 function PlayerPredictionsPanel({
   competitionId,
   userId,
@@ -97,6 +102,47 @@ function PlayerPredictionsPanel({
       .finally(() => setLoading(false));
   }, [competitionId, userId]);
 
+  const downloadCsv = () => {
+    if (!data) return;
+
+    const lines = [
+      [
+        toCsvCell("Ottelupari"),
+        toCsvCell("Veikkaus"),
+        toCsvCell("Tulos"),
+        toCsvCell("Pisteet"),
+      ].join(","),
+    ];
+
+    for (const round of data.rounds) {
+      for (const matchPair of round.matchPairs) {
+        const prediction = matchPair.prediction
+          ? `${scoreDisplay(matchPair.prediction.homeScore)}–${scoreDisplay(matchPair.prediction.awayScore)}`
+          : "";
+
+        lines.push(
+          [
+            toCsvCell(`${matchPair.homeTeam} - ${matchPair.awayTeam}`),
+            toCsvCell(prediction),
+            toCsvCell(`${matchPair.actualHomeScore}–${matchPair.actualAwayScore}`),
+            toCsvCell(matchPair.points.total),
+          ].join(","),
+        );
+      }
+    }
+
+    const csvContent = `\uFEFF${lines.join("\n")}`;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `veikkaukset-${displayName.toLowerCase().replace(/\s+/g, "-")}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
@@ -134,15 +180,25 @@ function PlayerPredictionsPanel({
             </button>
           </div>
           <h2 className="flex-1 truncate px-2 text-center font-bold text-gray-900">{displayName} – veikkaukset</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Sulje"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={downloadCsv}
+              disabled={!data || data.rounds.length === 0}
+              className="rounded-lg border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Lataa tiedot
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Sulje"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="p-4">
