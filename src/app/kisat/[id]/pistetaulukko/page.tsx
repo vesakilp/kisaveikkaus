@@ -117,9 +117,9 @@ function PlayerPredictionsPanel({
     for (const round of data.rounds) {
       for (const matchPair of round.matchPairs) {
         const prediction = matchPair.prediction
-          ? `${scoreDisplay(matchPair.prediction.homeScore)}–${scoreDisplay(matchPair.prediction.awayScore)}`
+          ? `${scoreDisplay(matchPair.prediction.homeScore)}-${scoreDisplay(matchPair.prediction.awayScore)}`
           : "";
-        const actualScore = `${scoreDisplay(matchPair.actualHomeScore)}–${scoreDisplay(matchPair.actualAwayScore)}`;
+        const actualScore = `${scoreDisplay(matchPair.actualHomeScore)}-${scoreDisplay(matchPair.actualAwayScore)}`;
 
         lines.push(
           [
@@ -141,11 +141,11 @@ function PlayerPredictionsPanel({
       .toLowerCase()
       .replace(/[^a-z0-9-_\s]/gi, "")
       .trim()
-      .replace(/\s+/g, "-");
+      .replace(/\s+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64);
     link.download = `veikkaukset-${fileSafeDisplayName || "pelaaja"}.csv`;
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(downloadUrl);
   };
 
