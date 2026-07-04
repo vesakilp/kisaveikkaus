@@ -102,26 +102,27 @@ function PlayerPredictionsPanel({
       .finally(() => setLoading(false));
   }, [competitionId, userId]);
 
+  const hasExportRows = Boolean(
+    data?.rounds.some((round) =>
+      round.matchPairs.some((matchPair) => matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null)
+    )
+  );
+
   const downloadCsv = () => {
     if (!data) return;
 
-    const lines = [
-      [
-        toCsvCell("Ottelupari"),
-        toCsvCell("Veikkaus"),
-        toCsvCell("Tulos"),
-        toCsvCell("Pisteet"),
-      ].join(","),
-    ];
+    const rows: string[] = [];
 
     for (const round of data.rounds) {
       for (const matchPair of round.matchPairs) {
+        if (matchPair.actualHomeScore === null || matchPair.actualAwayScore === null) continue;
+
         const prediction = matchPair.prediction
           ? `${scoreDisplay(matchPair.prediction.homeScore)}-${scoreDisplay(matchPair.prediction.awayScore)}`
           : "";
         const actualScore = `${scoreDisplay(matchPair.actualHomeScore)}-${scoreDisplay(matchPair.actualAwayScore)}`;
 
-        lines.push(
+        rows.push(
           [
             toCsvCell(`${matchPair.homeTeam} - ${matchPair.awayTeam}`),
             toCsvCell(prediction),
@@ -131,6 +132,18 @@ function PlayerPredictionsPanel({
         );
       }
     }
+
+    if (rows.length === 0) return;
+
+    const lines = [
+      [
+        toCsvCell("Ottelupari"),
+        toCsvCell("Veikkaus"),
+        toCsvCell("Tulos"),
+        toCsvCell("Pisteet"),
+      ].join(","),
+      ...rows,
+    ];
 
     const csvContent = `\uFEFF${lines.join("\n")}`;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -190,7 +203,7 @@ function PlayerPredictionsPanel({
             <button
               type="button"
               onClick={downloadCsv}
-              disabled={!data || data.rounds.length === 0}
+              disabled={!data || !hasExportRows}
               className="rounded-lg border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Lataa tiedot
