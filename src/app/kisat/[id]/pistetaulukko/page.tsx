@@ -46,6 +46,9 @@ interface PlayerPredictionsData {
   rounds: PlayerPredictionsRound[];
 }
 
+const MAX_FILENAME_PART_LENGTH = 64;
+const DOWNLOAD_URL_REVOKE_DELAY_MS = 1_000;
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fi-FI", {
     day: "2-digit",
@@ -70,7 +73,7 @@ function sanitizeFilenamePart(value: string): string {
     .trim()
     .replace(/\s+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 64);
+    .slice(0, MAX_FILENAME_PART_LENGTH);
 }
 
 function PlayerPredictionsPanel({
@@ -163,7 +166,7 @@ function PlayerPredictionsPanel({
     const fileSafeDisplayName = sanitizeFilenamePart(displayName);
     link.download = `veikkaukset-${fileSafeDisplayName || "pelaaja"}.csv`;
     link.click();
-    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1_000);
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), DOWNLOAD_URL_REVOKE_DELAY_MS);
   };
 
   return (
