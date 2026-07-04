@@ -328,7 +328,7 @@ export default function LeaderboardPage() {
         <div className="mx-auto w-full max-w-3xl">
           {data && (
             <div className="mb-2">
-              <Link href="/kisat" className="text-sm text-gray-400 transition-colors hover:text-gray-600">
+              <Link href={`/kisat/${data.competition.id}`} className="text-sm text-gray-400 transition-colors hover:text-gray-600">
                 ← {data.competition.name}
               </Link>
             </div>
