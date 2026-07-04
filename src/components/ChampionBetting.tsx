@@ -81,11 +81,18 @@ export default function ChampionBetting({ competitionId }: ChampionBettingProps)
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Veikkauksen tallennus epäonnistui");
+        let errorMessage = "Veikkauksen tallennus epäonnistui";
+        try {
+          const data = await response.json();
+          errorMessage = data.error || errorMessage;
+        } catch {
+          // Response body was not JSON
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await response.json();
 
       setPrediction(data);
       setSuccessMessage("Veikkaus tallennettu!");
