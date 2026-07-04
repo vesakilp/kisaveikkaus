@@ -57,13 +57,21 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayName }),
       });
-      const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Näyttönimen päivitys epäonnistui");
+        let errorMessage = "Näyttönimen päivitys epäonnistui";
+        try {
+          const data = await response.json();
+          errorMessage = data.error || errorMessage;
+        } catch {
+          // Response body was not JSON
+        }
+        setError(errorMessage);
         setSaving(false);
         return;
       }
+
+      const data = await response.json();
 
       setDisplayName(data.user.displayName ?? "");
       setSuccess("Näyttönimi päivitetty");

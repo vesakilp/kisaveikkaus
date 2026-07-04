@@ -85,12 +85,18 @@ export default function ChampionBetAdminPage() {
 
     fetch(`/api/competitions/${id}/champion-bet`)
       .then(async (response) => {
-        const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error ?? "Mestariveikkausta ei voitu ladata");
+          let errorMessage = "Mestariveikkausta ei voitu ladata";
+          try {
+            const data = await response.json();
+            errorMessage = data.error ?? errorMessage;
+          } catch {
+            // Response body was not JSON
+          }
+          throw new Error(errorMessage);
         }
 
-        return data as CompetitionResponse;
+        return (await response.json()) as CompetitionResponse;
       })
       .then((data) => {
         if (cancelled) return;
@@ -177,11 +183,19 @@ export default function ChampionBetAdminPage() {
           options: optionNames,
         }),
       });
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Tallennus epäonnistui");
+        let errorMessage = "Tallennus epäonnistui";
+        try {
+          const data = await response.json();
+          errorMessage = data.error ?? errorMessage;
+        } catch {
+          // Response body was not JSON
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await response.json();
 
       setCompetition((prev) => (prev ? { ...prev, championBet: data } : prev));
       setForm({
@@ -225,11 +239,19 @@ export default function ChampionBetAdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resolvedOptionId: optionId }),
       });
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Voittajan tallennus epäonnistui");
+        let errorMessage = "Voittajan tallennus epäonnistui";
+        try {
+          const data = await response.json();
+          errorMessage = data.error ?? errorMessage;
+        } catch {
+          // Response body was not JSON
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await response.json();
 
       setCompetition((prev) => (prev ? { ...prev, championBet: data } : prev));
       setWinnerId(data.resolvedOptionId ?? null);
@@ -260,11 +282,19 @@ export default function ChampionBetAdminPage() {
       const response = await fetch(`/api/competitions/${id}/champion-bet`, {
         method: "DELETE",
       });
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Poisto epäonnistui");
+        let errorMessage = "Poisto epäonnistui";
+        try {
+          const data = await response.json();
+          errorMessage = data.error ?? errorMessage;
+        } catch {
+          // Response body was not JSON
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await response.json();
 
       setCompetition((prev) => (prev ? { ...prev, championBet: null } : prev));
       setForm(emptyForm);

@@ -48,7 +48,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       },
     });
   } catch (error) {
-    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022")) {
+    // Handle both PrismaClientKnownRequestError and PrismaClientValidationError
+    // The latter occurs when schema fields don't match (e.g., additionalInfo doesn't exist)
+    const isPrismaSchemaError = 
+      (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") ||
+      (error instanceof Prisma.PrismaClientValidationError);
+    
+    if (!isPrismaSchemaError) {
       throw error;
     }
     competition = await prisma.competition.findUnique({
