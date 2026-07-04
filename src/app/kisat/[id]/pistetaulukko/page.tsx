@@ -119,12 +119,13 @@ function PlayerPredictionsPanel({
         const prediction = matchPair.prediction
           ? `${scoreDisplay(matchPair.prediction.homeScore)}–${scoreDisplay(matchPair.prediction.awayScore)}`
           : "";
+        const actualScore = `${scoreDisplay(matchPair.actualHomeScore)}–${scoreDisplay(matchPair.actualAwayScore)}`;
 
         lines.push(
           [
             toCsvCell(`${matchPair.homeTeam} - ${matchPair.awayTeam}`),
             toCsvCell(prediction),
-            toCsvCell(`${matchPair.actualHomeScore}–${matchPair.actualAwayScore}`),
+            toCsvCell(actualScore),
             toCsvCell(matchPair.points.total),
           ].join(","),
         );
@@ -136,7 +137,12 @@ function PlayerPredictionsPanel({
     const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.download = `veikkaukset-${displayName.toLowerCase().replace(/\s+/g, "-")}.csv`;
+    const fileSafeDisplayName = displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9-_\s]/gi, "")
+      .trim()
+      .replace(/\s+/g, "-");
+    link.download = `veikkaukset-${fileSafeDisplayName || "pelaaja"}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
