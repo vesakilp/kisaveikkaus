@@ -46,6 +46,9 @@ interface PlayerPredictionsData {
   rounds: PlayerPredictionsRound[];
 }
 
+const MAX_FILENAME_PART_LENGTH = 64;
+const DOWNLOAD_URL_REVOKE_DELAY_MS = 1_000;
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fi-FI", {
     day: "2-digit",
@@ -56,6 +59,21 @@ function formatDate(iso: string) {
 
 function scoreDisplay(score: number | null | undefined): string {
   return score !== null && score !== undefined ? String(score) : "–";
+}
+
+function toCsvCell(value: string | number): string {
+  const text = String(value);
+  return `"${text.replaceAll("\"", "\"\"")}"`;
+}
+
+function sanitizeFilenamePart(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-_\s]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, MAX_FILENAME_PART_LENGTH);
 }
 
 function PlayerPredictionsPanel({
@@ -78,6 +96,7 @@ function PlayerPredictionsPanel({
   const [data, setData] = useState<PlayerPredictionsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const revokeUrlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch(`/api/competitions/${competitionId}/players/${userId}/predictions`)
@@ -96,6 +115,69 @@ function PlayerPredictionsPanel({
       )
       .finally(() => setLoading(false));
   }, [competitionId, userId]);
+
+  useEffect(() => {
+    return () => {
+      if (!revokeUrlTimeoutRef.current) return;
+      clearTimeout(revokeUrlTimeoutRef.current);
+    };
+  }, []);
+
+  const hasExportRows = Boolean(
+    data?.rounds.some((round) =>
+      round.matchPairs.some((matchPair) => matchPair.actualHomeScore !== null && matchPair.actualAwayScore !== null)
+    )
+  );
+
+  const downloadCsv = () => {
+    if (!data) return;
+
+    const rows: string[] = [];
+
+    for (const round of data.rounds) {
+      for (const matchPair of round.matchPairs) {
+        if (matchPair.actualHomeScore === null || matchPair.actualAwayScore === null) continue;
+
+        const prediction = matchPair.prediction
+          ? `${scoreDisplay(matchPair.prediction.homeScore)}-${scoreDisplay(matchPair.prediction.awayScore)}`
+          : "";
+        const actualScore = `${scoreDisplay(matchPair.actualHomeScore)}-${scoreDisplay(matchPair.actualAwayScore)}`;
+
+        rows.push(
+          [
+            toCsvCell(`${matchPair.homeTeam} - ${matchPair.awayTeam}`),
+            toCsvCell(prediction),
+            toCsvCell(actualScore),
+            toCsvCell(matchPair.points.total),
+          ].join(","),
+        );
+      }
+    }
+
+    if (rows.length === 0) return;
+
+    const lines = [
+      [
+        toCsvCell("Ottelupari"),
+        toCsvCell("Veikkaus"),
+        toCsvCell("Tulos"),
+        toCsvCell("Pisteet"),
+      ].join(","),
+      ...rows,
+    ];
+
+    const csvContent = `\uFEFF${lines.join("\n")}`;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    const fileSafeDisplayName = sanitizeFilenamePart(displayName);
+    const fallbackName = sanitizeFilenamePart("pelaaja");
+    link.download = `veikkaukset-${fileSafeDisplayName || fallbackName}.csv`;
+    link.click();
+    if (revokeUrlTimeoutRef.current) clearTimeout(revokeUrlTimeoutRef.current);
+    revokeUrlTimeoutRef.current = setTimeout(() => URL.revokeObjectURL(downloadUrl), DOWNLOAD_URL_REVOKE_DELAY_MS);
+  };
 
   return (
     <div
@@ -134,15 +216,25 @@ function PlayerPredictionsPanel({
             </button>
           </div>
           <h2 className="flex-1 truncate px-2 text-center font-bold text-gray-900">{displayName} – veikkaukset</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Sulje"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={downloadCsv}
+              disabled={!data || !hasExportRows}
+              className="rounded-lg border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Lataa tiedot
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Sulje"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="p-4">
