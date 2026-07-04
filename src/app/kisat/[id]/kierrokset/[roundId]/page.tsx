@@ -277,7 +277,7 @@ export default function RoundPredictionPage() {
       <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm sm:px-6">
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-2 flex items-center gap-3">
-            <Link href="/kisat" className="text-sm text-gray-400 transition-colors hover:text-gray-600">
+            <Link href={`/kisat/${round.competition.id}`} className="text-sm text-gray-400 transition-colors hover:text-gray-600">
               ← {round.competition.name}
             </Link>
           </div>
