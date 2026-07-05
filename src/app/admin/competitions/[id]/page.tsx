@@ -12,6 +12,7 @@ interface Round {
   additionalInfo: string | null;
   bettingStart: string;
   _count: { matchPairs: number };
+  matchPairs: { matchDate: string }[];
 }
 
 interface Competition {
@@ -271,7 +272,15 @@ export default function CompetitionPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {competition.rounds.map((round) => (
+            {[...competition.rounds]
+              .sort((a, b) => {
+                const maxDate = (r: Round) =>
+                  r.matchPairs.length > 0
+                    ? Math.max(...r.matchPairs.map((mp) => new Date(mp.matchDate).getTime()))
+                    : -Infinity;
+                return maxDate(b) - maxDate(a);
+              })
+              .map((round) => (
               <div key={round.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                 {editRoundId === round.id ? (
                   <div className="space-y-3">
