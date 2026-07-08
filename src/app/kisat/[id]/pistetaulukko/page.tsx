@@ -479,7 +479,7 @@ export default function LeaderboardPage() {
                         </td>
                         <td className="px-4 py-3">
                           <button
-                            className="font-medium text-gray-900 underline-offset-2 hover:text-blue-600 hover:underline"
+                            className="block w-full text-left font-medium text-gray-900 underline-offset-2 hover:text-blue-600 hover:underline"
                             aria-describedby="leaderboard-hint"
                             onClick={() => selectPlayerAtIndex(index)}
                           >
