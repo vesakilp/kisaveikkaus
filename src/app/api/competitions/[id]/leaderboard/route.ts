@@ -67,7 +67,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Kisaa ei löydy" }, { status: 404 });
   }
 
-  const totals: Record<number, { userId: number; displayName: string; points: number; perfectPredictions: number }> = {};
+  const totals: Record<number, { userId: number; displayName: string; points: number; perfectPredictions: number; correctChampionPrediction: boolean }> = {};
 
   for (const user of users) {
     totals[user.id] = {
@@ -75,6 +75,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       displayName: user.displayName,
       points: 0,
       perfectPredictions: 0,
+      correctChampionPrediction: false,
     };
   }
 
@@ -104,11 +105,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         continue;
       }
 
-      totals[prediction.userId].points += calculateChampionPoints(
+      const earned = calculateChampionPoints(
         prediction.optionId,
         competition.championBet.resolvedOptionId,
         getChampionBetPoints()
       );
+      totals[prediction.userId].points += earned;
+      if (earned > 0) {
+        totals[prediction.userId].correctChampionPrediction = true;
+      }
     }
   }
 
@@ -130,6 +135,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     (a, b) =>
       b.points - a.points ||
       b.perfectPredictions - a.perfectPredictions ||
+      Number(b.correctChampionPrediction) - Number(a.correctChampionPrediction) ||
       a.displayName.localeCompare(b.displayName, "fi")
   );
 
