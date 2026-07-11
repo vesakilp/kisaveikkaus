@@ -8,11 +8,13 @@ interface LeaderboardEntry {
   userId: number;
   displayName: string;
   points: number;
+  perfectPredictions: number;
 }
 
 interface LeaderboardData {
   competition: { id: number; name: string };
   leaderboard: LeaderboardEntry[];
+  allMatchesPlayed: boolean;
 }
 
 interface MatchPairPrediction {
@@ -469,6 +471,9 @@ export default function LeaderboardPage() {
                 <tbody>
                   {data.leaderboard.map((entry, index) => {
                     const isTop = index === 0;
+                    const hasTie =
+                      (index > 0 && data.leaderboard[index - 1].points === entry.points) ||
+                      (index < data.leaderboard.length - 1 && data.leaderboard[index + 1].points === entry.points);
                     return (
                       <tr
                         key={entry.userId}
@@ -483,7 +488,15 @@ export default function LeaderboardPage() {
                             aria-describedby="leaderboard-hint"
                             onClick={() => selectPlayerAtIndex(index)}
                           >
-                            {entry.displayName}
+                            <span className="block">{entry.displayName}</span>
+                            {hasTie && data.allMatchesPlayed && (
+                              <span
+                                className="block text-xs font-normal text-gray-400"
+                                aria-label={`${entry.perfectPredictions} kpl oikein veikattuja otteluita`}
+                              >
+                                ({entry.perfectPredictions} kpl oikein veikattuja)
+                              </span>
+                            )}
                           </button>
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-blue-700">{entry.points}</td>
