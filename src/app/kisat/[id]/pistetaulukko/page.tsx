@@ -14,6 +14,7 @@ interface LeaderboardEntry {
 interface LeaderboardData {
   competition: { id: number; name: string };
   leaderboard: LeaderboardEntry[];
+  allMatchesPlayed: boolean;
 }
 
 interface MatchPairPrediction {
@@ -488,7 +489,7 @@ export default function LeaderboardPage() {
                             onClick={() => selectPlayerAtIndex(index)}
                           >
                             <span className="block">{entry.displayName}</span>
-                            {hasTie && (
+                            {hasTie && data.allMatchesPlayed && (
                               <span
                                 className="block text-xs font-normal text-gray-400"
                                 aria-label={`${entry.perfectPredictions} kpl oikein veikattuja otteluita`}

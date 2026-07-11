@@ -133,5 +133,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       a.displayName.localeCompare(b.displayName, "fi")
   );
 
-  return NextResponse.json({ competition: { id: competition.id, name: competition.name }, leaderboard });
+  const allMatchesPlayed = competition.rounds.every((round) =>
+    round.matchPairs.every(
+      (mp) => mp.actualHomeScore != null && mp.actualAwayScore != null
+    )
+  );
+
+  return NextResponse.json({ competition: { id: competition.id, name: competition.name }, leaderboard, allMatchesPlayed });
 }
