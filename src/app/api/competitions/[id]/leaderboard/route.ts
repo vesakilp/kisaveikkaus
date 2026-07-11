@@ -67,13 +67,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Kisaa ei löydy" }, { status: 404 });
   }
 
-  const totals: Record<number, { userId: number; displayName: string; points: number }> = {};
+  const totals: Record<number, { userId: number; displayName: string; points: number; perfectPredictions: number }> = {};
 
   for (const user of users) {
     totals[user.id] = {
       userId: user.id,
       displayName: user.displayName,
       points: 0,
+      perfectPredictions: 0,
     };
   }
 
@@ -90,6 +91,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           matchPair.actualAwayScore
         );
         totals[prediction.userId].points += total;
+        if (total === 4) {
+          totals[prediction.userId].perfectPredictions += 1;
+        }
       }
     }
   }
@@ -123,7 +127,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 
   const leaderboard = Object.values(totals).sort(
-    (a, b) => b.points - a.points || a.displayName.localeCompare(b.displayName, "fi")
+    (a, b) =>
+      b.points - a.points ||
+      b.perfectPredictions - a.perfectPredictions ||
+      a.displayName.localeCompare(b.displayName, "fi")
   );
 
   return NextResponse.json({ competition: { id: competition.id, name: competition.name }, leaderboard });

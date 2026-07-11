@@ -8,6 +8,7 @@ interface LeaderboardEntry {
   userId: number;
   displayName: string;
   points: number;
+  perfectPredictions: number;
 }
 
 interface LeaderboardData {
@@ -469,6 +470,9 @@ export default function LeaderboardPage() {
                 <tbody>
                   {data.leaderboard.map((entry, index) => {
                     const isTop = index === 0;
+                    const hasTie =
+                      (index > 0 && data.leaderboard[index - 1].points === entry.points) ||
+                      (index < data.leaderboard.length - 1 && data.leaderboard[index + 1].points === entry.points);
                     return (
                       <tr
                         key={entry.userId}
@@ -484,6 +488,11 @@ export default function LeaderboardPage() {
                             onClick={() => selectPlayerAtIndex(index)}
                           >
                             {entry.displayName}
+                            {hasTie && (
+                              <span className="ml-1 text-xs font-normal text-gray-400">
+                                {entry.perfectPredictions} kpl oikein veikattuja
+                              </span>
+                            )}
                           </button>
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-blue-700">{entry.points}</td>
