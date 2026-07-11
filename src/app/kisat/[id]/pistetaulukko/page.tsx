@@ -9,6 +9,7 @@ interface LeaderboardEntry {
   displayName: string;
   points: number;
   perfectPredictions: number;
+  correctChampionPrediction: boolean;
 }
 
 interface LeaderboardData {
@@ -471,9 +472,14 @@ export default function LeaderboardPage() {
                 <tbody>
                   {data.leaderboard.map((entry, index) => {
                     const isTop = index === 0;
+                    const prevEntry = index > 0 ? data.leaderboard[index - 1] : null;
+                    const nextEntry = index < data.leaderboard.length - 1 ? data.leaderboard[index + 1] : null;
                     const hasTie =
-                      (index > 0 && data.leaderboard[index - 1].points === entry.points) ||
-                      (index < data.leaderboard.length - 1 && data.leaderboard[index + 1].points === entry.points);
+                      (prevEntry !== null && prevEntry.points === entry.points) ||
+                      (nextEntry !== null && nextEntry.points === entry.points);
+                    const hasChampionTiebreaker =
+                      (prevEntry !== null && prevEntry.points === entry.points && prevEntry.perfectPredictions === entry.perfectPredictions) ||
+                      (nextEntry !== null && nextEntry.points === entry.points && nextEntry.perfectPredictions === entry.perfectPredictions);
                     return (
                       <tr
                         key={entry.userId}
@@ -494,7 +500,10 @@ export default function LeaderboardPage() {
                                 className="block text-xs font-normal text-gray-400"
                                 aria-label={`${entry.perfectPredictions} kpl oikein veikattuja otteluita`}
                               >
-                                ({entry.perfectPredictions} kpl oikein veikattuja)
+                                ({entry.perfectPredictions} kpl oikein veikattuja
+                                {hasChampionTiebreaker && (
+                                  <>, mestariveikkaus: {entry.correctChampionPrediction ? "✓ oikein" : "✗ väärin"}</>
+                                )})
                               </span>
                             )}
                           </button>
