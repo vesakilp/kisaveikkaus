@@ -487,10 +487,10 @@ export default function LeaderboardPage() {
                             aria-describedby="leaderboard-hint"
                             onClick={() => selectPlayerAtIndex(index)}
                           >
-                            {entry.displayName}
+                            <span className="block">{entry.displayName}</span>
                             {hasTie && (
                               <span
-                                className="ml-1 text-xs font-normal text-gray-400"
+                                className="block text-xs font-normal text-gray-400"
                                 aria-label={`${entry.perfectPredictions} kpl oikein veikattuja otteluita`}
                               >
                                 ({entry.perfectPredictions} kpl oikein veikattuja)
