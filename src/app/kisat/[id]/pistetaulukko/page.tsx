@@ -489,8 +489,11 @@ export default function LeaderboardPage() {
                           >
                             {entry.displayName}
                             {hasTie && (
-                              <span className="ml-1 text-xs font-normal text-gray-400">
-                                {entry.perfectPredictions} kpl oikein veikattuja
+                              <span
+                                className="ml-1 text-xs font-normal text-gray-400"
+                                aria-label={`${entry.perfectPredictions} kpl oikein veikattuja otteluita`}
+                              >
+                                ({entry.perfectPredictions} kpl oikein veikattuja)
                               </span>
                             )}
                           </button>
