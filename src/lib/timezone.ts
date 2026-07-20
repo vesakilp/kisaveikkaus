@@ -27,18 +27,43 @@ export function toDatetimeLocalInFinland(input: string | Date) {
   const date = input instanceof Date ? input : new Date(input);
   if (Number.isNaN(date.getTime())) return "";
 
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: FINLAND_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: FINLAND_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date);
 
-  const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${getPart("year")}-${getPart("month")}-${getPart("day")}T${getPart("hour")}:${getPart("minute")}`;
+    const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+    const value = `${getPart("year")}-${getPart("month")}-${getPart("day")}T${getPart("hour")}:${getPart("minute")}`;
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+    if (!match) return "";
+
+    const [, yearText, monthText, dayText, hourText, minuteText] = match;
+    const year = Number(yearText);
+    const month = Number(monthText);
+    const day = Number(dayText);
+    const hour = Number(hourText);
+    const minute = Number(minuteText);
+    if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) return "";
+
+    const calendarValidationDate = new Date(Date.UTC(year, month - 1, day));
+    if (
+      calendarValidationDate.getUTCFullYear() !== year ||
+      calendarValidationDate.getUTCMonth() + 1 !== month ||
+      calendarValidationDate.getUTCDate() !== day
+    ) {
+      return "";
+    }
+
+    return value;
+  } catch {
+    return "";
+  }
 }
 
 export function formatDateTimeInFinland(input: string | Date) {
