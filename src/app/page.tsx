@@ -32,24 +32,36 @@ export default async function Home() {
     );
   }
 
-  const competitions = await prisma.competition.findMany({
-    include: {
-      rounds: {
-        orderBy: { bettingStart: "asc" },
-        where: {
-          matchPairs: { some: { matchDate: { gt: new Date() } } },
-        },
-        select: {
-          id: true,
-          name: true,
-          _count: { select: { matchPairs: true } },
+  const now = new Date();
+
+  const [activeCompetitions, pastCompetitions] = await Promise.all([
+    prisma.competition.findMany({
+      where: {
+        rounds: { some: { matchPairs: { some: { matchDate: { gt: now } } } } },
+      },
+      include: {
+        rounds: {
+          orderBy: { bettingStart: "asc" },
+          where: { matchPairs: { some: { matchDate: { gt: now } } } },
+          select: {
+            id: true,
+            name: true,
+            _count: { select: { matchPairs: true } },
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const activeCompetitions = competitions.filter(c => c.rounds.length > 0);
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.competition.findMany({
+      where: {
+        rounds: {
+          none: { matchPairs: { some: { matchDate: { gt: now } } } },
+          some: { matchPairs: { some: {} } },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   return (
     <main className="flex flex-1 flex-col bg-white px-4 py-8 sm:px-6 sm:py-12">
@@ -58,52 +70,82 @@ export default async function Home() {
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             Tervetuloa, {session.displayName}!
           </h1>
-          <p className="mt-2 text-sm text-gray-500 sm:text-base">
-            Tässä ovat käynnissä olevat kisat
-          </p>
         </div>
 
-        {activeCompetitions.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">
-            <p className="text-gray-500">Ei käynnissä olevia kisoja tällä hetkellä.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {activeCompetitions.map((competition) => (
-              <div
-                key={competition.id}
-                className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      {competition.name}
-                    </h2>
-                    <div className="mt-3 space-y-2">
-                      {competition.rounds.map((round) => (
-                        <div
-                          key={round.id}
-                          className="flex items-center justify-between text-sm"
-                        >
-                          <span className="text-gray-700">{round.name}</span>
-                          <span className="text-gray-500">
-                            {round._count.matchPairs} ottelua
-                          </span>
-                        </div>
-                      ))}
+        <section className="mb-10">
+          <h2 className="mb-4 text-xl font-bold text-gray-900">Käynnissä olevat kisat</h2>
+          {activeCompetitions.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">
+              <p className="text-gray-500">Ei käynnissä olevia kisoja tällä hetkellä.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {activeCompetitions.map((competition) => (
+                <div
+                  key={competition.id}
+                  className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {competition.name}
+                      </h3>
+                      <div className="mt-3 space-y-2">
+                        {competition.rounds.map((round) => (
+                          <div
+                            key={round.id}
+                            className="flex items-center justify-between text-sm"
+                          >
+                            <span className="text-gray-700">{round.name}</span>
+                            <span className="text-gray-500">
+                              {round._count.matchPairs} ottelua
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                    <Link
+                      href={`/kisat/${competition.id}`}
+                      className="ml-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                    >
+                      Avaa
+                    </Link>
                   </div>
-                  <Link
-                    href={`/kisat/${competition.id}`}
-                    className="ml-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                  >
-                    Avaa
-                  </Link>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="mb-4 text-xl font-bold text-gray-900">Menneet kisat</h2>
+          {pastCompetitions.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">
+              <p className="text-gray-500">Ei menneitä kisoja.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pastCompetitions.map((competition) => (
+                <div
+                  key={competition.id}
+                  className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {competition.name}
+                    </h3>
+                    <Link
+                      href={`/kisat/${competition.id}`}
+                      className="ml-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                    >
+                      Avaa
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
