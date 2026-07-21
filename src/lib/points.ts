@@ -10,11 +10,11 @@ export interface PointsBreakdown {
  * Calculate points for a single prediction against actual results.
  *
  * Rules:
- * - Correct 1x2 (outcome: home win / draw / away win): 1 pt
+ * - Correct 1x2 (outcome: home win / draw / away win): 2 pt
  * - Correct home goals: 1 pt
  * - Correct away goals: 1 pt
- * - Both goals correct bonus: +1 pt (on top of the two goal points)
- * Maximum: 4 pts per match
+ * - Both goals correct bonus: +3 pt (on top of the two goal points)
+ * Maximum: 7 pts per match
  */
 export function calculatePoints(
   predictedHome: number | null | undefined,
@@ -38,7 +38,7 @@ export function calculatePoints(
     const predictedSign = Math.sign(predictedHome - predictedAway);
     if (actualSign === predictedSign) {
       outcome = true;
-      total += 1;
+      total += 2;
     }
   }
 
@@ -57,7 +57,7 @@ export function calculatePoints(
   // Both goals bonus
   if (homeGoals && awayGoals) {
     bothGoals = true;
-    total += 1;
+    total += 3;
   }
 
   return { total, outcome, homeGoals, awayGoals, bothGoals };

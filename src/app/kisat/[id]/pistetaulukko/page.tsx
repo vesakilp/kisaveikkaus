@@ -581,12 +581,12 @@ export default function LeaderboardPage() {
               </button>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
-              <li>• Oikea 1X2-tulos (kotivoitto/tasapeli/vierasvoitto): 1 piste</li>
+              <li>• Oikea 1X2-tulos (kotivoitto/tasapeli/vierasvoitto): 2 pistettä</li>
               <li>• Oikea kotijoukkueen maalimäärä: 1 piste</li>
               <li>• Oikea vierasjoukkueen maalimäärä: 1 piste</li>
-              <li>• Bonus, jos molemmat maalimäärät oikein: +1 piste</li>
+              <li>• Bonus, jos molemmat maalimäärät oikein: +3 pistettä</li>
             </ul>
-            <p className="mt-3 text-sm font-medium text-gray-800">Maksimissaan 4 pistettä per ottelu.</p>
+            <p className="mt-3 text-sm font-medium text-gray-800">Maksimissaan 7 pistettä per ottelu.</p>
           </div>
         </div>
       )}
