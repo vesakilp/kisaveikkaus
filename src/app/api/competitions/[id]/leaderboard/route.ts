@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           matchPair.actualAwayScore
         );
         totals[prediction.userId].points += total;
-        if (total === 4) {
+        if (total === 7) {
           totals[prediction.userId].perfectPredictions += 1;
         }
       }
