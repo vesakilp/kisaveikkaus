@@ -486,7 +486,7 @@ export default function LeaderboardPage() {
                         className={`border-b border-gray-100 last:border-0 ${isTop ? "bg-yellow-50" : ""}`}
                       >
                         <td className="px-4 py-3 font-semibold text-gray-500">
-                          {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
+                          {index === 0 ? "👑" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
                         </td>
                         <td className="px-4 py-3">
                           <button
